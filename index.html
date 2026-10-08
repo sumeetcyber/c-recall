@@ -37,7 +37,7 @@ button,input,textarea,select{font:inherit}button{cursor:pointer}
 .history{margin-top:14px}.history-list{padding:10px 14px}.history-row{display:grid;grid-template-columns:70px 1fr auto;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border)}.history-row:last-child{border-bottom:0}.history-score{font-weight:900}.history-date{color:var(--muted);font-size:11px}.badge{padding:4px 7px;border-radius:6px;background:var(--panel2);color:var(--muted);font-size:10px;font-weight:800}
 .empty{padding:30px;text-align:center;color:var(--muted)}
 dialog{width:min(900px,calc(100vw - 24px));background:var(--panel);color:var(--text);border:1px solid var(--border);border-radius:13px;padding:0}dialog::backdrop{background:rgba(0,0,0,.65)}.modal-head{display:flex;justify-content:space-between;padding:14px 16px;border-bottom:1px solid var(--border)}.settings{padding:16px}.field{margin-bottom:14px}.field label{display:block;margin-bottom:5px;color:var(--muted);font-size:10px;text-transform:uppercase}.field input,.field select,.field textarea{width:100%;padding:9px;border:1px solid var(--border);border-radius:7px;background:var(--panel2);color:var(--text);outline:0}.field textarea{min-height:260px;resize:vertical;font:13px/1.5 Consolas,monospace}.modal-actions{display:flex;justify-content:flex-end;gap:8px}
-.transfer{display:grid;grid-template-columns:1fr 1fr;gap:12px}.transfer textarea{min-height:150px}.note{color:var(--muted);font-size:11px;line-height:1.5;margin-top:7px}
+.settings-clean{padding:16px 16px 18px}.settings-section{padding:0 0 16px;margin-bottom:16px;border-bottom:1px solid var(--border)}.settings-section:last-of-type{border-bottom:0;margin-bottom:0}.settings-section-title{font-size:11px;font-weight:900;letter-spacing:.09em;text-transform:uppercase;color:var(--text);margin-bottom:12px}.field-hint{font-weight:600;color:var(--muted);text-transform:none;letter-spacing:0;margin-left:4px}.settings-clean .field{margin-bottom:12px}.settings-clean .note{max-width:680px}.settings-clean #autoThemeFields{padding-left:12px;border-left:2px solid var(--border);transition:opacity .15s}.settings-clean #autoThemeFields.disabled{opacity:.42;pointer-events:none}.transfer{display:grid;grid-template-columns:1fr 1fr;gap:12px}.transfer textarea{min-height:150px}.note{color:var(--muted);font-size:11px;line-height:1.5;margin-top:7px}
 .toast{position:fixed;right:20px;bottom:20px;background:var(--panel2);border:1px solid var(--border);border-radius:9px;padding:11px 14px;box-shadow:var(--shadow);opacity:0;transform:translateY(10px);pointer-events:none;transition:.2s}.toast.show{opacity:1;transform:none}
 @media(max-width:1000px){.layout{grid-template-columns:1fr}.stats{grid-template-columns:repeat(3,1fr)}.sidebar{order:2}}
 @media(max-width:600px){.app{padding:10px}.stats{grid-template-columns:repeat(2,1fr)}.topbar{align-items:flex-start;flex-direction:column}.transfer{grid-template-columns:1fr}}
@@ -111,23 +111,37 @@ dialog{width:min(900px,calc(100vw - 24px));background:var(--panel);color:var(--t
 
 <dialog id="settingsDialog">
   <div class="modal-head"><strong>Settings</strong><button class="btn" onclick="closeSettings()">✕</button></div>
-  <div class="settings">
-    <div class="field"><label>App Name</label><input id="appName"></div>
-    <div class="field"><label>Theme</label><select id="theme"><option value="dark">Dark</option><option value="light">Light</option><option value="paper">Paper</option><option value="midnight">Midnight</option><option value="amoled">AMOLED</option><option value="rose">Rose</option></select></div>
-<div class="field"><label>Automatic Day / Night Theme</label>
-  <select id="autoTheme"><option value="off">Off</option><option value="on">On</option></select>
-</div>
-<div class="field"><label>Day Theme</label>
-  <select id="dayTheme"><option value="dark">Dark</option><option value="light">Light</option><option value="paper">Paper</option><option value="midnight">Midnight</option><option value="amoled">AMOLED</option><option value="rose">Rose</option></select>
-</div>
-<div class="field"><label>Day Starts At</label><input id="dayStart" type="time" value="07:00"></div>
-<div class="field"><label>Night Theme</label>
-  <select id="nightTheme"><option value="dark">Dark</option><option value="light">Light</option><option value="paper">Paper</option><option value="midnight">Midnight</option><option value="amoled">AMOLED</option><option value="rose">Rose</option></select>
-</div>
-<div class="field"><label>Night Starts At</label><input id="nightStart" type="time" value="19:00"></div>
-<div class="field"><label>Clock Format</label><select id="clockFormat"><option value="24">24-hour</option><option value="12">12-hour</option></select><div class="note">Universal clock format. The 12-hour display intentionally has no AM/PM text.</div></div>
-<div class="field"><label>Time Zone</label>
-<select id="timezone"></select><div class="note" id="timezoneInfo">Uses the browser IANA/ICU timezone database and current UTC offset.</div></div>
+  <div class="settings settings-clean">
+    <div class="settings-section">
+      <div class="settings-section-title">General</div>
+      <div class="field"><label>App Name</label><input id="appName"></div>
+    </div>
+
+    <div class="settings-section">
+      <div class="settings-section-title">Appearance</div>
+      <div class="field"><label>Theme</label><select id="theme"><option value="dark">Dark</option><option value="light">Light</option><option value="paper">Paper</option><option value="midnight">Midnight</option><option value="amoled">AMOLED</option><option value="rose">Rose</option></select></div>
+    </div>
+
+    <div class="settings-section">
+      <div class="settings-section-title">Automatic Day / Night</div>
+      <div class="field"><label>Automatic Theme Switching</label>
+        <select id="autoTheme"><option value="off">Off — use the theme above</option><option value="on">On — switch automatically</option></select>
+      </div>
+      <div id="autoThemeFields">
+        <div class="field"><label>Day Theme</label><select id="dayTheme"><option value="dark">Dark</option><option value="light">Light</option><option value="paper">Paper</option><option value="midnight">Midnight</option><option value="amoled">AMOLED</option><option value="rose">Rose</option></select></div>
+        <div class="field"><label>Day Starts At <span class="field-hint">24-hour</span></label><input id="dayStart" type="text" inputmode="numeric" maxlength="5" placeholder="07:00" value="07:00"></div>
+        <div class="field"><label>Night Theme</label><select id="nightTheme"><option value="dark">Dark</option><option value="light">Light</option><option value="paper">Paper</option><option value="midnight">Midnight</option><option value="amoled">AMOLED</option><option value="rose">Rose</option></select></div>
+        <div class="field"><label>Night Starts At <span class="field-hint">24-hour</span></label><input id="nightStart" type="text" inputmode="numeric" maxlength="5" placeholder="19:00" value="19:00"></div>
+        <div class="note">Times are always entered as HH:MM in 24-hour format, so they stay unambiguous regardless of your clock display setting.</div>
+      </div>
+    </div>
+
+    <div class="settings-section">
+      <div class="settings-section-title">Clock</div>
+      <div class="field"><label>Clock Format</label><select id="clockFormat"><option value="24">24-hour — 14:48:32</option><option value="12">12-hour — 02:48:32</option></select><div class="note">Controls the live clock in the top bar. No AM/PM label is shown.</div></div>
+      <div class="field"><label>Time Zone</label><select id="timezone"></select><div class="note" id="timezoneInfo">Uses the selected IANA timezone and its current UTC offset.</div></div>
+    </div>
+
     <div class="modal-actions"><button class="btn" onclick="closeSettings()">Cancel</button><button class="btn primary" onclick="saveSettings()">Save</button></div>
   </div>
 </dialog>
@@ -521,6 +535,13 @@ function updateTimezoneInfo(){
 }
 document.getElementById("timezone")?.addEventListener("change",updateTimezoneInfo);
 
+function updateAutoThemeFields(){
+  const on=document.getElementById("autoTheme")?.value==="on";
+  const box=document.getElementById("autoThemeFields");
+  if(box) box.classList.toggle("disabled",!on);
+}
+document.getElementById("autoTheme")?.addEventListener("change",updateAutoThemeFields);
+
 function applyTheme(){
   let theme=state.theme||"dark";
   if(state.autoTheme==="on"){
@@ -545,9 +566,17 @@ function openSettings(){
   document.getElementById("clockFormat").value=state.clockFormat||"24";
   document.getElementById("timezone").value=state.timezone||"local";
   updateTimezoneInfo();
+  updateAutoThemeFields();
   document.getElementById("settingsDialog").showModal();
 }
 function closeSettings(){document.getElementById("settingsDialog").close()}
+function normalize24Time(value,fallback){
+  const m=String(value||"").trim().match(/^(\d{1,2}):(\d{2})$/);
+  if(!m) return fallback;
+  const h=Number(m[1]), min=Number(m[2]);
+  return h>=0 && h<=23 && min>=0 && min<=59 ? String(h).padStart(2,"0")+":"+String(min).padStart(2,"0") : fallback;
+}
+
 function saveSettings(){
   state.appName=document.getElementById("appName").value.trim()||"C Recall";
   state.theme=document.getElementById("theme").value;
