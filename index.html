@@ -14,6 +14,9 @@
 [data-theme=light]{--bg:#f3f6f9;--panel:#fff;--panel2:#f7f9fb;--editor:#f8fafc;--border:#d8e0e8;--text:#18212b;--muted:#687687;--accent:#3979d8}
 [data-theme=midnight]{--bg:#080a17;--panel:#101329;--panel2:#151a35;--editor:#080b18;--border:#29315a;--text:#edf0ff;--muted:#929ac0;--accent:#8d8cff}
 [data-theme=amoled]{--bg:#000;--panel:#050505;--panel2:#090909;--editor:#000;--border:#191919;--text:#f5f5f5;--muted:#777;--accent:#fff}
+[data-theme=paper]{--bg:#f4efe3;--panel:#fffdf7;--panel2:#f7f1e4;--editor:#fffdf8;--border:#d9cdb8;--text:#332d25;--muted:#7d7161;--accent:#9a6b32}
+[data-theme=rose]{--bg:#160b11;--panel:#211019;--panel2:#2b141f;--editor:#13090e;--border:#4a2735;--text:#f8eaf0;--muted:#b995a4;--accent:#f08aaa}
+
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,system-ui,-apple-system,"Segoe UI",sans-serif}
 button,input,textarea,select{font:inherit}button{cursor:pointer}
@@ -109,7 +112,34 @@ dialog{width:min(900px,calc(100vw - 24px));background:var(--panel);color:var(--t
   <div class="modal-head"><strong>Settings</strong><button class="btn" onclick="closeSettings()">✕</button></div>
   <div class="settings">
     <div class="field"><label>App Name</label><input id="appName"></div>
-    <div class="field"><label>Theme</label><select id="theme"><option value="dark">Dark</option><option value="light">Light</option><option value="midnight">Midnight</option><option value="amoled">AMOLED</option></select></div>
+    <div class="field"><label>Theme</label><select id="theme"><option value="dark">Dark</option><option value="light">Light</option><option value="paper">Paper</option><option value="midnight">Midnight</option><option value="amoled">AMOLED</option><option value="rose">Rose</option></select></div>
+<div class="field"><label>Automatic Day / Night Theme</label>
+  <select id="autoTheme"><option value="off">Off</option><option value="on">On</option></select>
+</div>
+<div class="field"><label>Day Theme</label>
+  <select id="dayTheme"><option value="dark">Dark</option><option value="light">Light</option><option value="paper">Paper</option><option value="midnight">Midnight</option><option value="amoled">AMOLED</option><option value="rose">Rose</option></select>
+</div>
+<div class="field"><label>Day Starts At</label><input id="dayStart" type="time" value="07:00"></div>
+<div class="field"><label>Night Theme</label>
+  <select id="nightTheme"><option value="dark">Dark</option><option value="light">Light</option><option value="paper">Paper</option><option value="midnight">Midnight</option><option value="amoled">AMOLED</option><option value="rose">Rose</option></select>
+</div>
+<div class="field"><label>Night Starts At</label><input id="nightStart" type="time" value="19:00"></div>
+<div class="field"><label>Time Zone</label>
+<select id="timezone">
+<option value="local">Browser / System Time Zone</option>
+<option value="Asia/Kolkata">Asia/Kolkata</option>
+<option value="Asia/Dubai">Asia/Dubai</option>
+<option value="Asia/Singapore">Asia/Singapore</option>
+<option value="Asia/Tokyo">Asia/Tokyo</option>
+<option value="Europe/London">Europe/London</option>
+<option value="Europe/Berlin">Europe/Berlin</option>
+<option value="America/New_York">America/New_York</option>
+<option value="America/Chicago">America/Chicago</option>
+<option value="America/Denver">America/Denver</option>
+<option value="America/Los_Angeles">America/Los_Angeles</option>
+<option value="Australia/Sydney">Australia/Sydney</option>
+<option value="Pacific/Auckland">Pacific/Auckland</option>
+</select></div>
     <div class="modal-actions"><button class="btn" onclick="closeSettings()">Cancel</button><button class="btn primary" onclick="saveSettings()">Save</button></div>
   </div>
 </dialog>
@@ -176,6 +206,7 @@ function blankState(){
     schema:SCHEMA,
     appName:"C Recall",
     theme:"dark",
+    autoTheme:"off", dayTheme:"light", nightTheme:"midnight", dayStart:"07:00", nightStart:"19:00", timezone:"local",
     selectedRef:null,
     refs:[],
     attempts:[]
@@ -193,47 +224,55 @@ function esc(s){
   return String(s).replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;").replaceAll("'","&#039;");
 }
 
-function cookieSet(name,value,maxAge=31536000){
-  document.cookie=`${COOKIE_PREFIX}${name}=${encodeURIComponent(value)}; Max-Age=${maxAge}; Path=/; SameSite=Lax`;
-}
-function cookieGet(name){
-  const key=encodeURIComponent(`${COOKIE_PREFIX}${name}`)+"=";
-  const hit=document.cookie.split("; ").find(x=>x.startsWith(key));
-  return hit ? decodeURIComponent(hit.slice(key.length)) : null;
-}
-function cookieDelete(name){
-  document.cookie=`${COOKIE_PREFIX}${name}=; Max-Age=0; Path=/; SameSite=Lax`;
-}
 function saveState(){
-  const raw=JSON.stringify(state);
-  const oldN=parseInt(cookieGet("chunks")||"0",10);
-  for(let i=0;i<oldN;i++) cookieDelete(`data_${i}`);
-  const chunks=[];
-  for(let i=0;i<raw.length;i+=COOKIE_CHUNK) chunks.push(raw.slice(i,i+COOKIE_CHUNK));
-  chunks.forEach((x,i)=>cookieSet(`data_${i}`,x));
-  cookieSet("chunks",String(chunks.length));
+  localStorage.setItem("c_recall_final",JSON.stringify(state));
 }
 function loadState(){
   try{
-    const n=parseInt(cookieGet("chunks")||"0",10);
-    if(!n) return migrateLegacy();
-    let raw="";
-    for(let i=0;i<n;i++) raw+=cookieGet(`data_${i}`)||"";
-    const parsed=JSON.parse(raw);
-    return parsed.schema===SCHEMA ? parsed : migrate(parsed);
-  }catch(e){ return blankState(); }
+    const raw=localStorage.getItem("c_recall_final");
+    if(raw){
+      const parsed=JSON.parse(raw);
+      if(parsed.refs) return migrate(parsed);
+      return migrateLegacy(parsed);
+    }
+  }catch(e){}
+  return blankState();
 }
 function migrateLegacy(old){
-  if(old && old.target){
-    const ref={id:uid(),name:old.programName||"C Program",versions:[{version:1,code:old.target,createdAt:new Date().toISOString()}]};
-    const s=blankState(); s.appName=old.programName||"C Recall"; s.theme=old.theme||"dark"; s.refs=[ref]; s.selectedRef=ref.id;
-    return s;
+  const out=blankState();
+  if(!old) return out;
+  out.appName=old.appName||old.programName||"C Recall";
+  out.theme=old.theme||"dark";
+  out.autoTheme=old.autoTheme||"off";
+  out.dayTheme=old.dayTheme||"light";
+  out.nightTheme=old.nightTheme||"midnight";
+  out.dayStart=old.dayStart||"07:00";
+  out.nightStart=old.nightStart||"19:00";
+  out.timezone=old.timezone||"local";
+  if(old.refs){ return migrate(old); }
+  const target=old.target;
+  if(target){
+    const ref={id:uid(),name:old.programName||"C Program",versions:[{version:1,code:target,createdAt:new Date().toISOString()}]};
+    out.refs=[ref]; out.selectedRef=ref.id;
+    out.attempts=(old.attempts||[]).map(a=>({...a,refId:a.refId||ref.id,refVersion:a.refVersion||1}));
   }
-  return blankState();
+  return out;
 }
 function migrate(s){
   const out=blankState();
-  if(s){out.appName=s.appName||"C Recall";out.theme=s.theme||"dark";out.refs=s.refs||[];out.attempts=s.attempts||[];out.selectedRef=s.selectedRef||null}
+  if(s){
+    out.appName=s.appName||s.programName||"C Recall";
+    out.theme=s.theme||"dark";
+    out.autoTheme=s.autoTheme||"off";
+    out.dayTheme=s.dayTheme||"light";
+    out.nightTheme=s.nightTheme||"midnight";
+    out.dayStart=s.dayStart||"07:00";
+    out.nightStart=s.nightStart||"19:00";
+    out.timezone=s.timezone||"local";
+    out.refs=s.refs||[];
+    out.attempts=s.attempts||[];
+    out.selectedRef=s.selectedRef||(out.refs[0]?.id||null);
+  }
   return out;
 }
 
@@ -250,11 +289,12 @@ function init(){
     const r={id:uid(),name:"Array Input Program",versions:[{version:1,code:DEFAULT_CODE,createdAt:new Date().toISOString()}]};
     state.refs=[r];state.selectedRef=r.id;saveState();
   }
-  document.documentElement.dataset.theme=state.theme;
+  applyTheme();
   document.getElementById("programTitle").textContent=state.appName;
   renderRefs(); loadSelected(); updateStats(); renderHistory(); updateLines();
 }
 init();
+setInterval(applyTheme,30000);
 
 function renderRefs(){
   const box=document.getElementById("refList");
@@ -423,9 +463,51 @@ function renderHistory(){
   box.innerHTML=state.attempts.slice(0,30).map(a=>{const r=state.refs.find(x=>x.id===a.refId);return `<div class="history-row"><div class="history-score">${a.score}%</div><div>${esc(r?.name||"Deleted reference")} · v${a.refVersion}<div class="history-date">${esc(new Date(a.date).toLocaleString())} · ${a.errors} discrepancies</div></div><div class="badge">${a.score===100?"PERFECT":a.score>=80?"GOOD":"DRILL"}</div></div>`}).join("");
 }
 
-function openSettings(){document.getElementById("appName").value=state.appName;document.getElementById("theme").value=state.theme;document.getElementById("settingsDialog").showModal()}
+function effectiveTimeZone(){
+  if(state.timezone && state.timezone!=="local") return state.timezone;
+  return Intl.DateTimeFormat().resolvedOptions().timeZone;
+}
+function minutesInZone(){
+  const parts=new Intl.DateTimeFormat("en-GB",{timeZone:effectiveTimeZone(),hour:"2-digit",minute:"2-digit",hourCycle:"h23"}).formatToParts(new Date());
+  return Number(parts.find(x=>x.type==="hour")?.value||0)*60+Number(parts.find(x=>x.type==="minute")?.value||0);
+}
+function applyTheme(){
+  let theme=state.theme||"dark";
+  if(state.autoTheme==="on"){
+    const now=minutesInZone();
+    const [dh,dm]=(state.dayStart||"07:00").split(":").map(Number);
+    const [nh,nm]=(state.nightStart||"19:00").split(":").map(Number);
+    const day=dh*60+dm, night=nh*60+nm;
+    const isDay = day<night ? now>=day && now<night : now>=day || now<night;
+    theme=isDay ? (state.dayTheme||"light") : (state.nightTheme||"midnight");
+  }
+  document.documentElement.dataset.theme=theme;
+}
+function openSettings(){
+  document.getElementById("appName").value=state.appName||"C Recall";
+  document.getElementById("theme").value=state.theme||"dark";
+  document.getElementById("autoTheme").value=state.autoTheme||"off";
+  document.getElementById("dayTheme").value=state.dayTheme||"light";
+  document.getElementById("nightTheme").value=state.nightTheme||"midnight";
+  document.getElementById("dayStart").value=state.dayStart||"07:00";
+  document.getElementById("nightStart").value=state.nightStart||"19:00";
+  document.getElementById("timezone").value=state.timezone||"local";
+  document.getElementById("settingsDialog").showModal();
+}
 function closeSettings(){document.getElementById("settingsDialog").close()}
-function saveSettings(){state.appName=document.getElementById("appName").value.trim()||"C Recall";state.theme=document.getElementById("theme").value;document.documentElement.dataset.theme=state.theme;document.getElementById("programTitle").textContent=state.appName;saveState();closeSettings();toast("Settings saved.")}
+function saveSettings(){
+  state.appName=document.getElementById("appName").value.trim()||"C Recall";
+  state.theme=document.getElementById("theme").value;
+  state.autoTheme=document.getElementById("autoTheme").value;
+  state.dayTheme=document.getElementById("dayTheme").value;
+  state.nightTheme=document.getElementById("nightTheme").value;
+  state.dayStart=document.getElementById("dayStart").value||"07:00";
+  state.nightStart=document.getElementById("nightStart").value||"19:00";
+  state.timezone=document.getElementById("timezone").value||"local";
+  applyTheme();
+  document.getElementById("programTitle").textContent=state.appName;
+  saveState();closeSettings();toast("Settings saved.");
+}
 
 function openTransfer(){
   document.getElementById("exportToken").value=makeToken();
@@ -445,13 +527,13 @@ function importToken(){
     const raw=document.getElementById("importToken").value.trim();if(!raw.startsWith("CRECALL1."))throw new Error("Invalid token");
     const p=JSON.parse(fromBase64url(raw.slice(9)));
     if(p.format!=="C-RECALL-TRANSFER")throw new Error("Invalid token");
-    state=migrate(p.state);saveState();document.documentElement.dataset.theme=state.theme;document.getElementById("programTitle").textContent=state.appName;renderRefs();loadSelected();updateStats();renderHistory();closeTransfer();toast("Local session imported.");
+    state=migrate(p.state);saveState();applyTheme();document.getElementById("programTitle").textContent=state.appName;renderRefs();loadSelected();updateStats();renderHistory();closeTransfer();toast("Local session imported.");
   }catch(e){toast("That transfer token is invalid.")}
 }
 
 function clearAllData(){
   if(!confirm("This clears all C Recall cookies, references, versions and attempt history on this browser. Continue?"))return;
-  const n=parseInt(cookieGet("chunks")||"0",10);for(let i=0;i<n;i++)cookieDelete(`data_${i}`);cookieDelete("chunks");
+  localStorage.removeItem("c_recall_final");
   state=blankState();saveState();init();toast("All local C Recall data was cleared.");
 }
 function toast(msg){const t=document.getElementById("toast");t.textContent=msg;t.classList.add("show");clearTimeout(window._toast);window._toast=setTimeout(()=>t.classList.remove("show"),2200)}
