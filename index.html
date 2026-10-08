@@ -24,7 +24,7 @@ button,input,textarea,select{font:inherit}button{cursor:pointer}
 .topbar{display:flex;align-items:center;justify-content:space-between;gap:18px;margin-bottom:16px}
 .brand{display:flex;align-items:center;gap:12px}.logo{width:42px;height:42px;border-radius:11px;background:var(--accent);color:var(--bg);display:grid;place-items:center;font:900 18px monospace}
 .brand h1{margin:0;font-size:20px}.brand small{color:var(--muted)}
-.actions{display:flex;gap:8px;flex-wrap:wrap}.btn{border:1px solid var(--border);background:var(--panel);color:var(--text);padding:9px 13px;border-radius:8px}.btn:hover{border-color:var(--accent)}.btn.primary{background:var(--accent);color:var(--bg);border-color:var(--accent);font-weight:800}.btn.danger{border-color:rgba(255,100,114,.45);color:var(--red)}
+.actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.clock{min-width:72px;text-align:center;padding:9px 11px;border:1px solid var(--border);background:var(--panel);border-radius:8px;font:800 13px/1.1 Consolas,monospace;color:var(--text)}.btn{border:1px solid var(--border);background:var(--panel);color:var(--text);padding:9px 13px;border-radius:8px}.btn:hover{border-color:var(--accent)}.btn.primary{background:var(--accent);color:var(--bg);border-color:var(--accent);font-weight:800}.btn.danger{border-color:rgba(255,100,114,.45);color:var(--red)}
 .stats{display:grid;grid-template-columns:repeat(6,1fr);gap:10px;margin-bottom:14px}.stat{background:var(--panel);border:1px solid var(--border);border-radius:11px;padding:12px 14px}.stat-label{color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.08em}.stat-value{margin-top:3px;font-size:21px;font-weight:850}
 .layout{display:grid;grid-template-columns:270px minmax(0,1fr);gap:14px}
 .panel{background:var(--panel);border:1px solid var(--border);border-radius:13px;overflow:hidden;box-shadow:var(--shadow)}
@@ -51,6 +51,7 @@ dialog{width:min(900px,calc(100vw - 24px));background:var(--panel);color:var(--t
     <div><h1 id="programTitle">C Recall</h1><small>Recall code. Track progress. Build mastery.</small></div>
   </div>
   <div class="actions">
+    <div class="clock" id="universalClock" title="Universal clock">00:00</div>
     <button class="btn" onclick="openSettings()">⚙ Settings</button>
     <button class="btn" onclick="openTransfer()">⇄ Transfer</button>
     <button class="btn danger" onclick="clearAllData()">Clear Data</button>
@@ -124,6 +125,7 @@ dialog{width:min(900px,calc(100vw - 24px));background:var(--panel);color:var(--t
   <select id="nightTheme"><option value="dark">Dark</option><option value="light">Light</option><option value="paper">Paper</option><option value="midnight">Midnight</option><option value="amoled">AMOLED</option><option value="rose">Rose</option></select>
 </div>
 <div class="field"><label>Night Starts At</label><input id="nightStart" type="time" value="19:00"></div>
+<div class="field"><label>Clock Format</label><select id="clockFormat"><option value="24">24-hour</option><option value="12">12-hour</option></select><div class="note">Universal clock format. The 12-hour display intentionally has no AM/PM text.</div></div>
 <div class="field"><label>Time Zone</label>
 <select id="timezone"></select><div class="note" id="timezoneInfo">Uses the browser IANA/ICU timezone database and current UTC offset.</div></div>
     <div class="modal-actions"><button class="btn" onclick="closeSettings()">Cancel</button><button class="btn primary" onclick="saveSettings()">Save</button></div>
@@ -192,7 +194,7 @@ function blankState(){
     schema:SCHEMA,
     appName:"C Recall",
     theme:"dark",
-    autoTheme:"off", dayTheme:"light", nightTheme:"midnight", dayStart:"07:00", nightStart:"19:00", timezone:"local",
+    autoTheme:"off", dayTheme:"light", nightTheme:"midnight", dayStart:"07:00", nightStart:"19:00", timezone:"local", clockFormat:"24",
     selectedRef:null,
     refs:[],
     attempts:[]
@@ -235,6 +237,7 @@ function migrateLegacy(old){
   out.dayStart=old.dayStart||"07:00";
   out.nightStart=old.nightStart||"19:00";
   out.timezone=old.timezone||"local";
+  out.clockFormat=old.clockFormat||"24";
   if(old.refs){ return migrate(old); }
   const target=old.target;
   if(target){
@@ -255,6 +258,7 @@ function migrate(s){
     out.dayStart=s.dayStart||"07:00";
     out.nightStart=s.nightStart||"19:00";
     out.timezone=s.timezone||"local";
+    out.clockFormat=s.clockFormat||"24";
     out.refs=s.refs||[];
     out.attempts=s.attempts||[];
     out.selectedRef=s.selectedRef||(out.refs[0]?.id||null);
@@ -277,11 +281,13 @@ function init(){
     state.refs=[r];state.selectedRef=r.id;saveState();
   }
   applyTheme();
+  updateUniversalClock();
   document.getElementById("programTitle").textContent=state.appName;
   renderRefs(); loadSelected(); updateStats(); renderHistory(); updateLines();
 }
 init();
-setInterval(applyTheme,30000);
+setInterval(()=>{applyTheme();updateUniversalClock();},1000);
+updateUniversalClock();
 
 function renderRefs(){
   const box=document.getElementById("refList");
@@ -469,6 +475,18 @@ function renderHistory(){
   box.innerHTML=state.attempts.slice(0,30).map(a=>{const r=state.refs.find(x=>x.id===a.refId);return `<div class="history-row"><div class="history-score">${a.score}%</div><div>${esc(r?.name||"Deleted reference")} · v${a.refVersion}<div class="history-date">${esc(new Date(a.date).toLocaleString())} · ${a.errors} discrepancies</div></div><div class="badge">${a.score===100?"PERFECT":a.score>=80?"GOOD":"DRILL"}</div></div>`}).join("");
 }
 
+function updateUniversalClock(){
+  const el=document.getElementById("universalClock"); if(!el)return;
+  const zone=effectiveTimeZone();
+  try{
+    const opts={timeZone:zone,hour:"2-digit",minute:"2-digit",second:"2-digit",hourCycle:state.clockFormat==="12"?"h12":"h23"};
+    let value=new Intl.DateTimeFormat("en-US",opts).format(new Date());
+    if(state.clockFormat==="12") value=value.replace(/\s*(AM|PM)$/i,"");
+    el.textContent=value;
+    el.title=`${zone} · ${getTimezoneOffset(zone)}`;
+  }catch(e){el.textContent="--:--:--";}
+}
+
 function effectiveTimeZone(){
   if(state.timezone && state.timezone!=="local") return state.timezone;
   return Intl.DateTimeFormat().resolvedOptions().timeZone;
@@ -524,6 +542,7 @@ function openSettings(){
   document.getElementById("dayStart").value=state.dayStart||"07:00";
   document.getElementById("nightStart").value=state.nightStart||"19:00";
   populateTimezones();
+  document.getElementById("clockFormat").value=state.clockFormat||"24";
   document.getElementById("timezone").value=state.timezone||"local";
   updateTimezoneInfo();
   document.getElementById("settingsDialog").showModal();
@@ -537,8 +556,10 @@ function saveSettings(){
   state.nightTheme=document.getElementById("nightTheme").value;
   state.dayStart=document.getElementById("dayStart").value||"07:00";
   state.nightStart=document.getElementById("nightStart").value||"19:00";
+  state.clockFormat=document.getElementById("clockFormat").value||"24";
   state.timezone=document.getElementById("timezone").value||"local";
   applyTheme();
+  updateUniversalClock();
   document.getElementById("programTitle").textContent=state.appName;
   saveState();closeSettings();toast("Settings saved.");
 }
