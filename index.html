@@ -1,0 +1,464 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#0b1016">
+<title>C Recall</title>
+<style>
+:root{
+ --bg:#0b1016;--panel:#111821;--panel2:#151e28;--editor:#0a0f15;--border:#263342;
+ --text:#e9eef5;--muted:#8794a5;--accent:#6ea8fe;--red:#ff6472;--green:#48d889;
+ --yellow:#f2c95c;--shadow:0 16px 45px rgba(0,0,0,.22)
+}
+[data-theme=light]{--bg:#f3f6f9;--panel:#fff;--panel2:#f7f9fb;--editor:#f8fafc;--border:#d8e0e8;--text:#18212b;--muted:#687687;--accent:#3979d8}
+[data-theme=midnight]{--bg:#080a17;--panel:#101329;--panel2:#151a35;--editor:#080b18;--border:#29315a;--text:#edf0ff;--muted:#929ac0;--accent:#8d8cff}
+[data-theme=amoled]{--bg:#000;--panel:#050505;--panel2:#090909;--editor:#000;--border:#191919;--text:#f5f5f5;--muted:#777;--accent:#fff}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,system-ui,-apple-system,"Segoe UI",sans-serif}
+button,input,textarea,select{font:inherit}button{cursor:pointer}
+.app{max-width:1500px;margin:auto;padding:22px}
+.topbar{display:flex;align-items:center;justify-content:space-between;gap:18px;margin-bottom:16px}
+.brand{display:flex;align-items:center;gap:12px}.logo{width:42px;height:42px;border-radius:11px;background:var(--accent);color:var(--bg);display:grid;place-items:center;font:900 18px monospace}
+.brand h1{margin:0;font-size:20px}.brand small{color:var(--muted)}
+.actions{display:flex;gap:8px;flex-wrap:wrap}.btn{border:1px solid var(--border);background:var(--panel);color:var(--text);padding:9px 13px;border-radius:8px}.btn:hover{border-color:var(--accent)}.btn.primary{background:var(--accent);color:var(--bg);border-color:var(--accent);font-weight:800}.btn.danger{border-color:rgba(255,100,114,.45);color:var(--red)}
+.stats{display:grid;grid-template-columns:repeat(6,1fr);gap:10px;margin-bottom:14px}.stat{background:var(--panel);border:1px solid var(--border);border-radius:11px;padding:12px 14px}.stat-label{color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.08em}.stat-value{margin-top:3px;font-size:21px;font-weight:850}
+.layout{display:grid;grid-template-columns:270px minmax(0,1fr);gap:14px}
+.panel{background:var(--panel);border:1px solid var(--border);border-radius:13px;overflow:hidden;box-shadow:var(--shadow)}
+.panel-head{min-height:52px;display:flex;align-items:center;justify-content:space-between;padding:0 14px;background:var(--panel2);border-bottom:1px solid var(--border)}
+.title{font-size:12px;font-weight:850;text-transform:uppercase;letter-spacing:.07em}.subtitle{margin-top:2px;color:var(--muted);font-size:11px}
+.sidebar{height:max-content}.ref-list{padding:8px}.ref-item{padding:11px;border:1px solid transparent;border-radius:9px;margin-bottom:5px;cursor:pointer}.ref-item:hover{background:var(--panel2)}.ref-item.active{background:var(--panel2);border-color:var(--border)}.ref-name{font-weight:750;font-size:13px}.ref-meta{color:var(--muted);font-size:10px;margin-top:4px}.version-pill{display:inline-block;margin-top:6px;padding:2px 6px;border-radius:5px;background:rgba(110,168,254,.12);color:var(--accent);font-size:9px;font-weight:800}
+.editor-wrap{display:grid;grid-template-columns:58px 1fr;background:var(--editor)}#lineNumbers{padding:17px 12px 17px 0;text-align:right;color:#526070;font:14px/1.55 Consolas,"Cascadia Mono",monospace;white-space:pre;overflow:hidden;user-select:none;border-right:1px solid var(--border)}#editor{width:100%;height:620px;resize:vertical;padding:17px;border:0;outline:0;background:transparent;color:var(--text);font:14px/1.55 Consolas,"Cascadia Mono",monospace;tab-size:4;white-space:pre;overflow:auto}.editor-footer{display:flex;justify-content:space-between;padding:9px 14px;border-top:1px solid var(--border);color:var(--muted);font-size:11px}
+.result{margin-top:14px}.result-top{padding:17px;border-bottom:1px solid var(--border)}.result-row{display:flex;align-items:end;justify-content:space-between}.score{font-size:43px;line-height:1;font-weight:900}.score-label{margin-top:3px;color:var(--muted);font-size:10px;letter-spacing:.08em}.result-count{font-size:14px}.result-message{margin-top:9px;color:var(--muted);font-size:13px}
+.discrepancies{padding:4px 16px}.diff{padding:18px 0;border-bottom:1px solid var(--border)}.diff:last-child{border-bottom:0}.diff-head{display:flex;align-items:center;gap:12px;margin-bottom:11px}.diff-number{font:800 12px monospace;color:var(--muted)}.diff-location{color:var(--muted);font-size:11px;flex:1}.diff-type{color:var(--accent);font-size:10px;font-weight:900;letter-spacing:.07em}.diff-label{margin:8px 0 5px;color:var(--muted);font-size:10px;font-weight:850;letter-spacing:.08em;text-transform:uppercase}.code-line{padding:8px 10px;margin-bottom:8px;background:var(--editor);border:1px solid var(--border);border-radius:7px;overflow-x:auto;white-space:pre;font:13px/1.55 Consolas,"Cascadia Mono",monospace}.wrong{color:var(--red);background:rgba(255,100,114,.15);border-radius:2px;text-decoration:underline;text-decoration-color:var(--red)}.right{color:var(--green);background:rgba(72,216,137,.14);border-radius:2px;text-decoration:underline;text-decoration-color:var(--green)}.empty-change{color:var(--muted);font-style:italic}
+.history{margin-top:14px}.history-list{padding:10px 14px}.history-row{display:grid;grid-template-columns:70px 1fr auto;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border)}.history-row:last-child{border-bottom:0}.history-score{font-weight:900}.history-date{color:var(--muted);font-size:11px}.badge{padding:4px 7px;border-radius:6px;background:var(--panel2);color:var(--muted);font-size:10px;font-weight:800}
+.empty{padding:30px;text-align:center;color:var(--muted)}
+dialog{width:min(900px,calc(100vw - 24px));background:var(--panel);color:var(--text);border:1px solid var(--border);border-radius:13px;padding:0}dialog::backdrop{background:rgba(0,0,0,.65)}.modal-head{display:flex;justify-content:space-between;padding:14px 16px;border-bottom:1px solid var(--border)}.settings{padding:16px}.field{margin-bottom:14px}.field label{display:block;margin-bottom:5px;color:var(--muted);font-size:10px;text-transform:uppercase}.field input,.field select,.field textarea{width:100%;padding:9px;border:1px solid var(--border);border-radius:7px;background:var(--panel2);color:var(--text);outline:0}.field textarea{min-height:260px;resize:vertical;font:13px/1.5 Consolas,monospace}.modal-actions{display:flex;justify-content:flex-end;gap:8px}
+.transfer{display:grid;grid-template-columns:1fr 1fr;gap:12px}.transfer textarea{min-height:150px}.note{color:var(--muted);font-size:11px;line-height:1.5;margin-top:7px}
+.toast{position:fixed;right:20px;bottom:20px;background:var(--panel2);border:1px solid var(--border);border-radius:9px;padding:11px 14px;box-shadow:var(--shadow);opacity:0;transform:translateY(10px);pointer-events:none;transition:.2s}.toast.show{opacity:1;transform:none}
+@media(max-width:1000px){.layout{grid-template-columns:1fr}.stats{grid-template-columns:repeat(3,1fr)}.sidebar{order:2}}
+@media(max-width:600px){.app{padding:10px}.stats{grid-template-columns:repeat(2,1fr)}.topbar{align-items:flex-start;flex-direction:column}.transfer{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="app">
+<header class="topbar">
+  <div class="brand">
+    <div class="logo">&lt;/&gt;</div>
+    <div><h1 id="programTitle">C Recall</h1><small>Recall code. Track progress. Build mastery.</small></div>
+  </div>
+  <div class="actions">
+    <button class="btn" onclick="openSettings()">⚙ Settings</button>
+    <button class="btn" onclick="openTransfer()">⇄ Transfer</button>
+    <button class="btn danger" onclick="clearAllData()">Clear Data</button>
+    <button class="btn primary" onclick="checkRecall()">✓ Check Recall</button>
+  </div>
+</header>
+
+<section class="stats">
+  <div class="stat"><div class="stat-label">References</div><div class="stat-value" id="statRefs">0</div></div>
+  <div class="stat"><div class="stat-label">Attempts</div><div class="stat-value" id="statAttempts">0</div></div>
+  <div class="stat"><div class="stat-label">Best</div><div class="stat-value" id="statBest">0%</div></div>
+  <div class="stat"><div class="stat-label">Average</div><div class="stat-value" id="statAverage">0%</div></div>
+  <div class="stat"><div class="stat-label">Streak</div><div class="stat-value" id="statStreak">0</div></div>
+  <div class="stat"><div class="stat-label">Last</div><div class="stat-value" id="statLast">—</div></div>
+</section>
+
+<div class="layout">
+  <aside class="panel sidebar">
+    <div class="panel-head">
+      <div><div class="title">Saved References</div><div class="subtitle">All programs & versions</div></div>
+      <button class="btn" onclick="newReference()">＋</button>
+    </div>
+    <div id="refList" class="ref-list"></div>
+  </aside>
+
+  <main>
+    <section class="panel">
+      <div class="panel-head">
+        <div><div class="title" id="editorTitle">Recall Editor</div><div class="subtitle" id="editorSubtitle">Write the selected reference from memory</div></div>
+        <div class="actions"><button class="btn" onclick="clearAttempt()">Clear Attempt</button><button class="btn primary" onclick="checkRecall()">✓ Check Recall</button></div>
+      </div>
+      <div class="editor-wrap">
+        <div id="lineNumbers">1</div>
+        <textarea id="editor" spellcheck="false" autocomplete="off" autocorrect="off" autocapitalize="off" placeholder="Start typing the program from memory..."></textarea>
+      </div>
+      <div class="editor-footer"><span id="editorInfo">0 lines · 0 characters</span><span>Tab = 4 spaces · Enter = auto-indent</span></div>
+    </section>
+
+    <section class="panel result">
+      <div class="result-top">
+        <div class="result-row">
+          <div><div class="score" id="score">—</div><div class="score-label">RECALL ACCURACY</div></div>
+          <div class="result-count" id="count">—</div>
+        </div>
+        <div class="result-message" id="message">Write the program and check your recall.</div>
+      </div>
+      <div id="discrepancies" class="discrepancies"><div class="empty">Your discrepancies will appear here.</div></div>
+    </section>
+
+    <section class="panel history">
+      <div class="panel-head"><div><div class="title">Attempt History</div><div class="subtitle">Every recall attempt is saved locally</div></div></div>
+      <div id="history" class="history-list"><div class="empty">No attempts yet.</div></div>
+    </section>
+  </main>
+</div>
+</div>
+
+<dialog id="settingsDialog">
+  <div class="modal-head"><strong>Settings</strong><button class="btn" onclick="closeSettings()">✕</button></div>
+  <div class="settings">
+    <div class="field"><label>App Name</label><input id="appName"></div>
+    <div class="field"><label>Theme</label><select id="theme"><option value="dark">Dark</option><option value="light">Light</option><option value="midnight">Midnight</option><option value="amoled">AMOLED</option></select></div>
+    <div class="modal-actions"><button class="btn" onclick="closeSettings()">Cancel</button><button class="btn primary" onclick="saveSettings()">Save</button></div>
+  </div>
+</dialog>
+
+<dialog id="referenceDialog">
+  <div class="modal-head"><strong id="referenceDialogTitle">New Reference</strong><button class="btn" onclick="closeReferenceDialog()">✕</button></div>
+  <div class="settings">
+    <div class="field"><label>Reference Name</label><input id="refName" placeholder="e.g. Array Input Program"></div>
+    <div class="field"><label>C Program — this becomes v1</label><textarea id="refCode" spellcheck="false"></textarea></div>
+    <div class="note">Saving an edited reference creates a new version. Previous versions remain available.</div>
+    <div class="modal-actions"><button class="btn" onclick="closeReferenceDialog()">Cancel</button><button class="btn primary" onclick="saveReferenceDialog()">Save Reference</button></div>
+  </div>
+</dialog>
+
+<dialog id="transferDialog">
+  <div class="modal-head"><strong>Local Account Cache</strong><button class="btn" onclick="closeTransfer()">✕</button></div>
+  <div class="settings">
+    <div class="note" style="margin-bottom:12px">This is a portable local-data token, not a password or server login. It contains your saved references, versions, attempts and settings. Keep it private.</div>
+    <div class="transfer">
+      <div class="field"><label>Export Token</label><textarea id="exportToken" readonly></textarea><button class="btn" style="margin-top:7px" onclick="copyToken()">Copy Token</button></div>
+      <div class="field"><label>Import Token</label><textarea id="importToken" placeholder="Paste a token from another computer"></textarea><button class="btn" style="margin-top:7px" onclick="importToken()">Import</button></div>
+    </div>
+    <div class="modal-actions"><button class="btn" onclick="closeTransfer()">Close</button></div>
+  </div>
+</dialog>
+
+<div id="toast" class="toast"></div>
+
+<script>
+const COOKIE_PREFIX="crecall_";
+const COOKIE_CHUNK=3500;
+const SCHEMA=2;
+
+const DEFAULT_CODE=`#include <stdio.h>
+
+int main()
+{
+    int n, i;
+
+    printf("Enter number of elements: ");
+    scanf("%d", &n);
+
+    int arr[n];
+
+    printf("Enter elements:\\n");
+
+    for (i = 0; i < n; i++)
+    {
+        scanf("%d", &arr[i]);
+    }
+
+    printf("Elements are:\\n");
+
+    for (i = 0; i < n; i++)
+    {
+        printf("%d ", arr[i]);
+    }
+
+    return 0;
+}`;
+
+function blankState(){
+  return {
+    schema:SCHEMA,
+    appName:"C Recall",
+    theme:"dark",
+    selectedRef:null,
+    refs:[],
+    attempts:[]
+  };
+}
+
+let state=loadState();
+let editingRefId=null;
+
+function uid(){
+  return crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36)+Math.random().toString(36).slice(2);
+}
+
+function esc(s){
+  return String(s).replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;").replaceAll("'","&#039;");
+}
+
+function cookieSet(name,value,maxAge=31536000){
+  document.cookie=`${COOKIE_PREFIX}${name}=${encodeURIComponent(value)}; Max-Age=${maxAge}; Path=/; SameSite=Lax`;
+}
+function cookieGet(name){
+  const key=encodeURIComponent(`${COOKIE_PREFIX}${name}`)+"=";
+  const hit=document.cookie.split("; ").find(x=>x.startsWith(key));
+  return hit ? decodeURIComponent(hit.slice(key.length)) : null;
+}
+function cookieDelete(name){
+  document.cookie=`${COOKIE_PREFIX}${name}=; Max-Age=0; Path=/; SameSite=Lax`;
+}
+function saveState(){
+  const raw=JSON.stringify(state);
+  const oldN=parseInt(cookieGet("chunks")||"0",10);
+  for(let i=0;i<oldN;i++) cookieDelete(`data_${i}`);
+  const chunks=[];
+  for(let i=0;i<raw.length;i+=COOKIE_CHUNK) chunks.push(raw.slice(i,i+COOKIE_CHUNK));
+  chunks.forEach((x,i)=>cookieSet(`data_${i}`,x));
+  cookieSet("chunks",String(chunks.length));
+}
+function loadState(){
+  try{
+    const n=parseInt(cookieGet("chunks")||"0",10);
+    if(!n) return migrateLegacy();
+    let raw="";
+    for(let i=0;i<n;i++) raw+=cookieGet(`data_${i}`)||"";
+    const parsed=JSON.parse(raw);
+    return parsed.schema===SCHEMA ? parsed : migrate(parsed);
+  }catch(e){ return blankState(); }
+}
+function migrateLegacy(old){
+  if(old && old.target){
+    const ref={id:uid(),name:old.programName||"C Program",versions:[{version:1,code:old.target,createdAt:new Date().toISOString()}]};
+    const s=blankState(); s.appName=old.programName||"C Recall"; s.theme=old.theme||"dark"; s.refs=[ref]; s.selectedRef=ref.id;
+    return s;
+  }
+  return blankState();
+}
+function migrate(s){
+  const out=blankState();
+  if(s){out.appName=s.appName||"C Recall";out.theme=s.theme||"dark";out.refs=s.refs||[];out.attempts=s.attempts||[];out.selectedRef=s.selectedRef||null}
+  return out;
+}
+
+const editor=document.getElementById("editor");
+
+function selectedRef(){
+  return state.refs.find(r=>r.id===state.selectedRef)||state.refs[0]||null;
+}
+function selectedVersion(r){
+  return r ? r.versions[r.versions.length-1] : null;
+}
+function init(){
+  if(!state.refs.length){
+    const r={id:uid(),name:"Array Input Program",versions:[{version:1,code:DEFAULT_CODE,createdAt:new Date().toISOString()}]};
+    state.refs=[r];state.selectedRef=r.id;saveState();
+  }
+  document.documentElement.dataset.theme=state.theme;
+  document.getElementById("programTitle").textContent=state.appName;
+  renderRefs(); loadSelected(); updateStats(); renderHistory(); updateLines();
+}
+init();
+
+function renderRefs(){
+  const box=document.getElementById("refList");
+  if(!state.refs.length){box.innerHTML='<div class="empty">No references.</div>';return}
+  box.innerHTML=state.refs.map(r=>{
+    const v=r.versions[r.versions.length-1];
+    return `<div class="ref-item ${r.id===state.selectedRef?'active':''}" onclick="selectRef('${r.id}')">
+      <div class="ref-name">${esc(r.name)}</div>
+      <div class="ref-meta">${r.versions.length} saved version${r.versions.length===1?'':'s'} · ${r.versions.reduce((n,v)=>n+1,0)} total</div>
+      <span class="version-pill">v${v.version}</span>
+    </div>`;
+  }).join("");
+}
+
+function selectRef(id){
+  state.selectedRef=id;saveState();loadSelected();renderRefs();clearResult();
+}
+function loadSelected(){
+  const r=selectedRef();
+  if(!r)return;
+  const v=selectedVersion(r);
+  document.getElementById("editorTitle").textContent=r.name;
+  document.getElementById("editorSubtitle").textContent=`Recall ${r.name} · v${v.version}`;
+  editor.value=""; updateLines();
+}
+function newReference(){
+  editingRefId=null;
+  document.getElementById("referenceDialogTitle").textContent="New Reference";
+  document.getElementById("refName").value="";
+  document.getElementById("refCode").value="";
+  document.getElementById("referenceDialog").showModal();
+}
+function editReference(){
+  const r=selectedRef(); if(!r)return;
+  editingRefId=r.id;
+  document.getElementById("referenceDialogTitle").textContent=`New Version · ${r.name}`;
+  document.getElementById("refName").value=r.name;
+  document.getElementById("refCode").value=selectedVersion(r).code;
+  document.getElementById("referenceDialog").showModal();
+}
+function closeReferenceDialog(){document.getElementById("referenceDialog").close()}
+function saveReferenceDialog(){
+  const name=document.getElementById("refName").value.trim()||"Untitled C Program";
+  const code=document.getElementById("refCode").value.replace(/\r/g,"");
+  if(!code.trim()){toast("Add some C code first.");return}
+  if(editingRefId){
+    const r=state.refs.find(x=>x.id===editingRefId);
+    const next=(r.versions.at(-1)?.version||0)+1;
+    r.name=name;r.versions.push({version:next,code,createdAt:new Date().toISOString()});
+    toast(`${r.name} saved as v${next}.`);
+  }else{
+    const r={id:uid(),name,versions:[{version:1,code,createdAt:new Date().toISOString()}]};
+    state.refs.unshift(r);state.selectedRef=r.id;toast("Reference saved as v1.");
+  }
+  saveState();closeReferenceDialog();renderRefs();loadSelected();
+}
+document.getElementById("editor").addEventListener("dblclick",()=>{if(selectedRef())editReference()});
+
+function updateLines(){
+  const lines=editor.value.split("\n").length;
+  document.getElementById("lineNumbers").textContent=Array.from({length:lines},(_,i)=>i+1).join("\n");
+  document.getElementById("editorInfo").textContent=`${lines} lines · ${editor.value.length} characters`;
+}
+editor.addEventListener("input",updateLines);
+editor.addEventListener("scroll",()=>document.getElementById("lineNumbers").scrollTop=editor.scrollTop);
+
+editor.addEventListener("keydown",e=>{
+  if(e.key==="Tab"){
+    e.preventDefault();const s=editor.selectionStart,end=editor.selectionEnd;
+    if(e.shiftKey){
+      const before=editor.value.slice(0,s),ls=before.lastIndexOf("\n")+1,line=editor.value.slice(ls,s);
+      if(line.startsWith("    "))editor.setRangeText("",ls,ls+4,"end");
+    }else editor.setRangeText("    ",s,end,"end");
+    updateLines();return;
+  }
+  if(e.key==="Enter"){
+    e.preventDefault();const s=editor.selectionStart,before=editor.value.slice(0,s),ls=before.lastIndexOf("\n")+1,line=before.slice(ls);
+    let ind=line.match(/^[ \t]*/)?.[0]||"",trim=line.trim();
+    if(trim.endsWith("{"))ind+="    ";
+    if(trim==="}"||trim.startsWith("}"))ind=ind.slice(0,Math.max(0,ind.length-4));
+    editor.setRangeText("\n"+ind,s,editor.selectionEnd,"end");updateLines();
+  }
+  if(e.key==="}" && editor.selectionStart===editor.selectionEnd){
+    const s=editor.selectionStart,b=editor.value.slice(0,s),ls=b.lastIndexOf("\n")+1,line=b.slice(ls);
+    if(/^[ \t]+$/.test(line)){e.preventDefault();const reduced=line.length>=4?line.slice(0,-4):"";editor.setRangeText(reduced+"}",ls,s,"end");updateLines()}
+  }
+});
+
+function tokens(line){
+  return line.match(/"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|\/\/.*|\/\*|\*\/|==|!=|<=|>=|\+\+|--|&&|\|\||->|[A-Za-z_]\w*|\d+(?:\.\d+)?|[^\s]/g)||[];
+}
+function similarity(a,b){
+  const A=tokens(a),B=tokens(b);if(!A.length&&!B.length)return 1;if(!A.length||!B.length)return 0;
+  const d=Array.from({length:A.length+1},()=>Array(B.length+1).fill(0));
+  for(let i=1;i<=A.length;i++)for(let j=1;j<=B.length;j++)d[i][j]=A[i-1]===B[j-1]?d[i-1][j-1]+1:Math.max(d[i-1][j],d[i][j-1]);
+  return 2*d[A.length][B.length]/(A.length+B.length);
+}
+function align(expected,actual){
+  const n=expected.length,m=actual.length,GAP=1.15;
+  const d=Array.from({length:n+1},()=>Array(m+1).fill(0)),p=Array.from({length:n+1},()=>Array(m+1).fill(""));
+  for(let i=1;i<=n;i++){d[i][0]=i*GAP;p[i][0]="u"}for(let j=1;j<=m;j++){d[0][j]=j*GAP;p[0][j]="l"}
+  for(let i=1;i<=n;i++)for(let j=1;j<=m;j++){
+    const diag=d[i-1][j-1]+1-similarity(expected[i-1].text,actual[j-1].text),up=d[i-1][j]+GAP,left=d[i][j-1]+GAP,b=Math.min(diag,up,left);
+    d[i][j]=b;p[i][j]=b===diag?"d":b===up?"u":"l";
+  }
+  const out=[];let i=n,j=m;while(i||j){if(p[i]?.[j]==="d"){out.unshift({expected:expected[i-1],actual:actual[j-1]});i--;j--}else if(p[i]?.[j]==="u"){out.unshift({expected:expected[i-1],actual:null});i--}else{out.unshift({expected:null,actual:actual[j-1]});j--}}
+  }return out;
+}
+function charDiff(a,b){
+  const n=a.length,m=b.length,d=Array.from({length:n+1},()=>Array(m+1).fill(0));
+  for(let i=n-1;i>=0;i--)for(let j=m-1;j>=0;j--)d[i][j]=a[i]===b[j]?d[i+1][j+1]+1:Math.max(d[i+1][j],d[i][j+1]);
+  let i=0,j=0,A=[],B=[],wa="",wb="";
+  const flush=()=>{if(wa){A.push(`<span class="wrong">${esc(wa)}</span>`);wa=""}if(wb){B.push(`<span class="right">${esc(wb)}</span>`);wb=""}};
+  while(i<n||j<m){
+    if(i<n&&j<m&&a[i]===b[j]){flush();A.push(esc(a[i]));B.push(esc(b[j]));i++;j++}
+    else if(j<m&&(i>=n||d[i][j+1]>=d[i+1][j])){wb+=b[j];j++}
+    else{wa+=a[i];i++}
+  }
+  flush();return {a:A.join(""),b:B.join("")};
+}
+function checkRecall(){
+  const r=selectedRef();if(!r){toast("Create a reference first.");return}
+  const target=selectedVersion(r).code.replace(/\r/g,"").split("\n").map((text,i)=>({text,number:i+1}));
+  const actual=editor.value.replace(/\r/g,"").split("\n").map((text,i)=>({text,number:i+1}));
+  const rows=align(target,actual),errors=[];
+  for(const x of rows){
+    if(!x.expected){errors.push({type:"EXTRA",line:x.actual.number,actual:x.actual.text,expected:""});continue}
+    if(!x.actual){errors.push({type:"MISSING",line:x.expected.number,actual:"",expected:x.expected.text});continue}
+    if(x.expected.text!==x.actual.text)errors.push({type:"CHANGE",line:x.actual.number,actual:x.actual.text,expected:x.expected.text});
+  }
+  const meaningful=target.filter(x=>x.text.trim()).length;
+  const score=meaningful?Math.max(0,Math.round(100*(1-errors.length/meaningful))):100;
+  renderResult(score,errors);
+  state.attempts.unshift({id:uid(),refId:r.id,refVersion:selectedVersion(r).version,score,errors:errors.length,date:new Date().toISOString()});
+  state.attempts=state.attempts.slice(0,100);saveState();updateStats();renderHistory();
+}
+function renderResult(score,items){
+  document.getElementById("score").textContent=score+"%";
+  document.getElementById("count").textContent=items.length?`${items.length} discrepancies`:"Perfect recall";
+  document.getElementById("message").textContent=score===100?"Exact recall. Nothing slipped.":score>=90?"Very close. Fix the small details.":score>=75?"Good recall. A few details slipped.":score>=50?"The structure is there. Drill the exact code.":"This one needs another recall pass.";
+  const box=document.getElementById("discrepancies");
+  if(!items.length){box.innerHTML='<div class="empty">✓ Exact match</div>';return}
+  box.innerHTML=items.map((d,i)=>differenceCard(d,i+1)).join("");
+}
+function differenceCard(d,n){
+  if(d.type==="CHANGE"){
+    const x=charDiff(d.actual,d.expected);
+    return `<div class="diff"><div class="diff-head"><span class="diff-number">#${n}</span><span class="diff-location">Line ${d.line}</span><span class="diff-type">CODE</span></div><div class="diff-label">Wrong</div><div class="code-line">${x.a}</div><div class="diff-label">Right</div><div class="code-line">${x.b}</div></div>`;
+  }
+  if(d.type==="MISSING"){
+    return `<div class="diff"><div class="diff-head"><span class="diff-number">#${n}</span><span class="diff-location">Expected line ${d.line}</span><span class="diff-type">MISSING</span></div><div class="diff-label">Wrong</div><div class="code-line"><span class="empty-change">No line written</span></div><div class="diff-label">Right</div><div class="code-line"><span class="right">${esc(d.expected)}</span></div></div>`;
+  }
+  return `<div class="diff"><div class="diff-head"><span class="diff-number">#${n}</span><span class="diff-location">Line ${d.line}</span><span class="diff-type">EXTRA</span></div><div class="diff-label">Wrong</div><div class="code-line"><span class="wrong">${esc(d.actual)}</span></div><div class="diff-label">Right</div><div class="code-line"><span class="empty-change">No line expected here</span></div></div>`;
+}
+function clearAttempt(){editor.value="";updateLines();clearResult()}
+function clearResult(){document.getElementById("score").textContent="—";document.getElementById("count").textContent="—";document.getElementById("message").textContent="Write the program and check your recall.";document.getElementById("discrepancies").innerHTML='<div class="empty">Your discrepancies will appear here.</div>'}
+
+function updateStats(){
+  const a=state.attempts;document.getElementById("statRefs").textContent=state.refs.length;document.getElementById("statAttempts").textContent=a.length;
+  if(!a.length){document.getElementById("statBest").textContent="0%";document.getElementById("statAverage").textContent="0%";document.getElementById("statStreak").textContent="0";document.getElementById("statLast").textContent="—";return}
+  const scores=a.map(x=>x.score);document.getElementById("statBest").textContent=Math.max(...scores)+"%";document.getElementById("statAverage").textContent=Math.round(scores.reduce((x,y)=>x+y,0)/scores.length)+"%";document.getElementById("statLast").textContent=a[0].score+"%";
+  let streak=0;for(const x of a){if(x.score>=80)streak++;else break}document.getElementById("statStreak").textContent=streak;
+}
+function renderHistory(){
+  const box=document.getElementById("history");if(!state.attempts.length){box.innerHTML='<div class="empty">No attempts yet.</div>';return}
+  box.innerHTML=state.attempts.slice(0,30).map(a=>{const r=state.refs.find(x=>x.id===a.refId);return `<div class="history-row"><div class="history-score">${a.score}%</div><div>${esc(r?.name||"Deleted reference")} · v${a.refVersion}<div class="history-date">${esc(new Date(a.date).toLocaleString())} · ${a.errors} discrepancies</div></div><div class="badge">${a.score===100?"PERFECT":a.score>=80?"GOOD":"DRILL"}</div></div>`}).join("");
+}
+
+function openSettings(){document.getElementById("appName").value=state.appName;document.getElementById("theme").value=state.theme;document.getElementById("settingsDialog").showModal()}
+function closeSettings(){document.getElementById("settingsDialog").close()}
+function saveSettings(){state.appName=document.getElementById("appName").value.trim()||"C Recall";state.theme=document.getElementById("theme").value;document.documentElement.dataset.theme=state.theme;document.getElementById("programTitle").textContent=state.appName;saveState();closeSettings();toast("Settings saved.")}
+
+function openTransfer(){
+  document.getElementById("exportToken").value=makeToken();
+  document.getElementById("importToken").value="";
+  document.getElementById("transferDialog").showModal();
+}
+function closeTransfer(){document.getElementById("transferDialog").close()}
+function base64url(s){return btoa(unescape(encodeURIComponent(s))).replaceAll("+","-").replaceAll("/","_").replaceAll("=","")}
+function fromBase64url(s){s=s.replaceAll("-","+").replaceAll("_","/");while(s.length%4)s+="=";return decodeURIComponent(escape(atob(s)))}
+function makeToken(){
+  const payload={format:"C-RECALL-TRANSFER",version:1,createdAt:new Date().toISOString(),state};
+  return "CRECALL1."+base64url(JSON.stringify(payload));
+}
+async function copyToken(){try{await navigator.clipboard.writeText(document.getElementById("exportToken").value);toast("Transfer token copied.")}catch{toast("Copy failed — select and copy the token.")}}
+function importToken(){
+  try{
+    const raw=document.getElementById("importToken").value.trim();if(!raw.startsWith("CRECALL1."))throw new Error("Invalid token");
+    const p=JSON.parse(fromBase64url(raw.slice(9)));
+    if(p.format!=="C-RECALL-TRANSFER")throw new Error("Invalid token");
+    state=migrate(p.state);saveState();document.documentElement.dataset.theme=state.theme;document.getElementById("programTitle").textContent=state.appName;renderRefs();loadSelected();updateStats();renderHistory();closeTransfer();toast("Local session imported.");
+  }catch(e){toast("That transfer token is invalid.")}
+}
+
+function clearAllData(){
+  if(!confirm("This clears all C Recall cookies, references, versions and attempt history on this browser. Continue?"))return;
+  const n=parseInt(cookieGet("chunks")||"0",10);for(let i=0;i<n;i++)cookieDelete(`data_${i}`);cookieDelete("chunks");
+  state=blankState();saveState();init();toast("All local C Recall data was cleared.");
+}
+function toast(msg){const t=document.getElementById("toast");t.textContent=msg;t.classList.add("show");clearTimeout(window._toast);window._toast=setTimeout(()=>t.classList.remove("show"),2200)}
+
+document.addEventListener("keydown",e=>{
+  if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==="s"){e.preventDefault();editReference()}
+});
+</script>
+</body>
+</html>
