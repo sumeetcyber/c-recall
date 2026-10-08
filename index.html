@@ -361,7 +361,7 @@ function align(expected,actual){
     d[i][j]=b;p[i][j]=b===diag?"d":b===up?"u":"l";
   }
   const out=[];let i=n,j=m;while(i||j){if(p[i]?.[j]==="d"){out.unshift({expected:expected[i-1],actual:actual[j-1]});i--;j--}else if(p[i]?.[j]==="u"){out.unshift({expected:expected[i-1],actual:null});i--}else{out.unshift({expected:null,actual:actual[j-1]});j--}}
-  }return out;
+  return out;
 }
 function charDiff(a,b){
   const n=a.length,m=b.length,d=Array.from({length:n+1},()=>Array(m+1).fill(0));
