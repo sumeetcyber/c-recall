@@ -1,638 +1,720 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
+<meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="theme-color" content="#0b1016">
-<title>C Recall</title>
+<title>Daily Sort</title>
 <style>
-:root{
- --bg:#0b1016;--panel:#111821;--panel2:#151e28;--editor:#0a0f15;--border:#263342;
- --text:#e9eef5;--muted:#8794a5;--accent:#6ea8fe;--red:#ff6472;--green:#48d889;
- --yellow:#f2c95c;--shadow:0 16px 45px rgba(0,0,0,.22)
-}
-[data-theme=light]{--bg:#f3f6f9;--panel:#fff;--panel2:#f7f9fb;--editor:#f8fafc;--border:#d8e0e8;--text:#18212b;--muted:#687687;--accent:#3979d8}
-[data-theme=midnight]{--bg:#080a17;--panel:#101329;--panel2:#151a35;--editor:#080b18;--border:#29315a;--text:#edf0ff;--muted:#929ac0;--accent:#8d8cff}
-[data-theme=amoled]{--bg:#000;--panel:#050505;--panel2:#090909;--editor:#000;--border:#191919;--text:#f5f5f5;--muted:#777;--accent:#fff}
-[data-theme=paper]{--bg:#f4efe3;--panel:#fffdf7;--panel2:#f7f1e4;--editor:#fffdf8;--border:#d9cdb8;--text:#332d25;--muted:#7d7161;--accent:#9a6b32}
-[data-theme=rose]{--bg:#160b11;--panel:#211019;--panel2:#2b141f;--editor:#13090e;--border:#4a2735;--text:#f8eaf0;--muted:#b995a4;--accent:#f08aaa}
-
-*{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,system-ui,-apple-system,"Segoe UI",sans-serif}
-button,input,textarea,select{font:inherit}button{cursor:pointer}
-.app{max-width:1500px;margin:auto;padding:22px}
-.topbar{display:flex;align-items:center;justify-content:space-between;gap:18px;margin-bottom:16px}
-.brand{display:flex;align-items:center;gap:12px}.logo{width:42px;height:42px;border-radius:11px;background:var(--accent);color:var(--bg);display:grid;place-items:center;font:900 18px monospace}
-.brand h1{margin:0;font-size:20px}.brand small{color:var(--muted)}
-.actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.clock{min-width:72px;text-align:center;padding:9px 11px;border:1px solid var(--border);background:var(--panel);border-radius:8px;font:800 13px/1.1 Consolas,monospace;color:var(--text)}.btn{border:1px solid var(--border);background:var(--panel);color:var(--text);padding:9px 13px;border-radius:8px}.btn:hover{border-color:var(--accent)}.btn.primary{background:var(--accent);color:var(--bg);border-color:var(--accent);font-weight:800}.btn.danger{border-color:rgba(255,100,114,.45);color:var(--red)}
-.stats{display:grid;grid-template-columns:repeat(6,1fr);gap:10px;margin-bottom:14px}.stat{background:var(--panel);border:1px solid var(--border);border-radius:11px;padding:12px 14px}.stat-label{color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.08em}.stat-value{margin-top:3px;font-size:21px;font-weight:850}
-.layout{display:grid;grid-template-columns:270px minmax(0,1fr);gap:14px}
-.panel{background:var(--panel);border:1px solid var(--border);border-radius:13px;overflow:hidden;box-shadow:var(--shadow)}
-.panel-head{min-height:52px;display:flex;align-items:center;justify-content:space-between;padding:0 14px;background:var(--panel2);border-bottom:1px solid var(--border)}
-.title{font-size:12px;font-weight:850;text-transform:uppercase;letter-spacing:.07em}.subtitle{margin-top:2px;color:var(--muted);font-size:11px}
-.sidebar{height:max-content}.ref-list{padding:8px}.ref-item{padding:11px;border:1px solid transparent;border-radius:9px;margin-bottom:5px;cursor:pointer}.ref-item:hover{background:var(--panel2)}.ref-item.active{background:var(--panel2);border-color:var(--border)}.ref-item.locked{opacity:.72}.lock-badge{display:inline-block;margin-left:5px;color:var(--yellow);font-size:10px}.ref-name{font-weight:750;font-size:13px}.ref-meta{color:var(--muted);font-size:10px;margin-top:4px}.version-pill{display:inline-block;margin-top:6px;padding:2px 6px;border-radius:5px;background:rgba(110,168,254,.12);color:var(--accent);font-size:9px;font-weight:800}
-.editor-wrap{display:grid;grid-template-columns:58px 1fr;background:var(--editor)}#lineNumbers{padding:17px 12px 17px 0;text-align:right;color:#526070;font:14px/1.55 Consolas,"Cascadia Mono",monospace;white-space:pre;overflow:hidden;user-select:none;border-right:1px solid var(--border)}#editor{width:100%;height:620px;resize:vertical;padding:17px;border:0;outline:0;background:transparent;color:var(--text);font:14px/1.55 Consolas,"Cascadia Mono",monospace;tab-size:4;white-space:pre;overflow:auto}.editor-footer{display:flex;justify-content:space-between;padding:9px 14px;border-top:1px solid var(--border);color:var(--muted);font-size:11px}
-.result{margin-top:14px}.result-top{padding:17px;border-bottom:1px solid var(--border)}.result-row{display:flex;align-items:end;justify-content:space-between}.score{font-size:43px;line-height:1;font-weight:900}.score-label{margin-top:3px;color:var(--muted);font-size:10px;letter-spacing:.08em}.result-count{font-size:14px}.result-message{margin-top:9px;color:var(--muted);font-size:13px}
-.discrepancies{padding:4px 16px}.diff{padding:18px 0;border-bottom:1px solid var(--border)}.diff:last-child{border-bottom:0}.diff-head{display:flex;align-items:center;gap:12px;margin-bottom:11px}.diff-number{font:800 12px monospace;color:var(--muted)}.diff-location{color:var(--muted);font-size:11px;flex:1}.diff-type{color:var(--accent);font-size:10px;font-weight:900;letter-spacing:.07em}.diff-label{margin:8px 0 5px;color:var(--muted);font-size:10px;font-weight:850;letter-spacing:.08em;text-transform:uppercase}.code-line{padding:8px 10px;margin-bottom:8px;background:var(--editor);border:1px solid var(--border);border-radius:7px;overflow-x:auto;white-space:pre;font:13px/1.55 Consolas,"Cascadia Mono",monospace}.wrong{color:var(--red);background:rgba(255,100,114,.15);border-radius:2px;text-decoration:underline;text-decoration-color:var(--red)}.right{color:var(--green);background:rgba(72,216,137,.14);border-radius:2px;text-decoration:underline;text-decoration-color:var(--green)}.empty-change{color:var(--muted);font-style:italic}
-.history{margin-top:14px}.history-list{padding:10px 14px}.history-row{display:grid;grid-template-columns:70px 1fr auto;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border)}.history-row:last-child{border-bottom:0}.history-score{font-weight:900}.history-date{color:var(--muted);font-size:11px}.badge{padding:4px 7px;border-radius:6px;background:var(--panel2);color:var(--muted);font-size:10px;font-weight:800}
-.empty{padding:30px;text-align:center;color:var(--muted)}
-dialog{width:min(900px,calc(100vw - 24px));background:var(--panel);color:var(--text);border:1px solid var(--border);border-radius:13px;padding:0}dialog::backdrop{background:rgba(0,0,0,.65)}.modal-head{display:flex;justify-content:space-between;padding:14px 16px;border-bottom:1px solid var(--border)}.settings{padding:16px}.field{margin-bottom:14px}.field label{display:block;margin-bottom:5px;color:var(--muted);font-size:10px;text-transform:uppercase}.field input,.field select,.field textarea{width:100%;padding:9px;border:1px solid var(--border);border-radius:7px;background:var(--panel2);color:var(--text);outline:0}.field textarea{min-height:260px;resize:vertical;font:13px/1.5 Consolas,monospace}.modal-actions{display:flex;justify-content:flex-end;gap:8px}
-.settings-clean{padding:16px 16px 18px}.settings-section{padding:0 0 16px;margin-bottom:16px;border-bottom:1px solid var(--border)}.settings-section:last-of-type{border-bottom:0;margin-bottom:0}.settings-section-title{font-size:11px;font-weight:900;letter-spacing:.09em;text-transform:uppercase;color:var(--text);margin-bottom:12px}.field-hint{font-weight:600;color:var(--muted);text-transform:none;letter-spacing:0;margin-left:4px}.settings-clean .field{margin-bottom:12px}.settings-clean .note{max-width:680px}.settings-clean #autoThemeFields{padding-left:12px;border-left:2px solid var(--border);transition:opacity .15s}.settings-clean #autoThemeFields.disabled{opacity:.42;pointer-events:none}.transfer{display:grid;grid-template-columns:1fr 1fr;gap:12px}.transfer textarea{min-height:150px}.note{color:var(--muted);font-size:11px;line-height:1.5;margin-top:7px}
-.toast{position:fixed;right:20px;bottom:20px;background:var(--panel2);border:1px solid var(--border);border-radius:9px;padding:11px 14px;box-shadow:var(--shadow);opacity:0;transform:translateY(10px);pointer-events:none;transition:.2s}.toast.show{opacity:1;transform:none}
-@media(max-width:1000px){.layout{grid-template-columns:1fr}.stats{grid-template-columns:repeat(3,1fr)}.sidebar{order:2}}
-@media(max-width:600px){.app{padding:10px}.stats{grid-template-columns:repeat(2,1fr)}.topbar{align-items:flex-start;flex-direction:column}.transfer{grid-template-columns:1fr}}
+  :root{
+    --bg:#f7f5f0;
+    --panel:#fffdf9;
+    --line:#e4ded4;
+    --text:#171513;
+    --muted:#746e65;
+    --accent:#4d8f70;
+    --accent-soft:#e3f1e9;
+    --blue:#5b93b8;
+    --blue-soft:#e5f0f6;
+    --red:#b56b67;
+    --red-soft:#f5e7e5;
+    --shadow:0 8px 24px rgba(40,32,22,.06);
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--text);
+    font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  }
+  button,input,textarea{font:inherit}
+  .wrap{max-width:1450px;margin:0 auto;padding:34px 30px 60px}
+  header{text-align:center;margin-bottom:28px}
+  h1{
+    margin:0;
+    font-family:Georgia,"Times New Roman",serif;
+    font-size:42px;
+    font-weight:500;
+    letter-spacing:-1px
+  }
+  .subtitle{margin:10px auto 0;color:var(--muted);font-size:16px}
+  .capture{
+    background:#edf3ef;
+    border:1px solid #d6e5dc;
+    border-radius:14px;
+    padding:14px;
+    display:flex;
+    gap:10px;
+    align-items:flex-end;
+    margin:0 auto 18px;
+    max-width:1100px;
+  }
+  .capture textarea{
+    flex:1;
+    min-height:84px;
+    resize:vertical;
+    border:1px solid #d9d4ca;
+    border-radius:10px;
+    background:#fff;
+    padding:12px 14px;
+    outline:none;
+  }
+  .capture textarea:focus{border-color:#91bca6;box-shadow:0 0 0 3px #91bca633}
+  .btn{
+    border:1px solid var(--line);
+    background:#fff;
+    color:var(--text);
+    border-radius:10px;
+    padding:10px 14px;
+    cursor:pointer;
+    transition:.15s ease;
+  }
+  .btn:hover{transform:translateY(-1px);box-shadow:0 3px 10px #0000000d}
+  .btn.primary{background:var(--accent);border-color:var(--accent);color:white}
+  .toolbar{
+    display:flex;justify-content:center;gap:8px;flex-wrap:wrap;margin-bottom:26px
+  }
+  .hint{
+    max-width:1100px;margin:0 auto 20px;text-align:center;
+    color:var(--muted);font-size:13px
+  }
+  .board{
+    display:grid;
+    grid-template-columns:240px minmax(420px,1fr) minmax(300px,420px);
+    gap:18px;
+    align-items:start;
+  }
+  .panel{
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:17px;
+    box-shadow:var(--shadow);
+    min-height:520px;
+    overflow:hidden;
+  }
+  .panel-head{
+    padding:18px 19px;
+    border-bottom:1px solid var(--line);
+    display:flex;align-items:center;justify-content:space-between;
+  }
+  .panel-title{
+    font-family:Georgia,"Times New Roman",serif;
+    font-size:22px
+  }
+  .count{
+    min-width:30px;height:30px;border-radius:50%;
+    display:grid;place-items:center;background:#f0ece5;color:var(--muted);font-size:13px
+  }
+  .groups{padding:12px}
+  .group{
+    border:1px solid var(--line);
+    background:#fbfaf7;
+    border-radius:11px;
+    padding:11px 12px;
+    margin-bottom:8px;
+    cursor:pointer;
+    display:flex;align-items:center;gap:9px;
+  }
+  .group.dragover{outline:2px solid #8ebba4;background:var(--accent-soft)}
+  .group-dot{width:10px;height:10px;border-radius:50%;background:#aaa}
+  .group-name{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .group-num{color:var(--muted);font-size:12px}
+  .add-group{display:flex;gap:7px;padding:12px;border-top:1px solid var(--line)}
+  .add-group input{
+    min-width:0;flex:1;border:1px solid var(--line);border-radius:9px;padding:9px 10px;background:#fff
+  }
+  .cards{padding:14px;min-height:440px}
+  .cards.dragover{background:#f2f7f4}
+  .empty{
+    border:1px dashed #cfc8bd;
+    border-radius:13px;
+    min-height:140px;
+    display:grid;place-items:center;
+    text-align:center;color:#91897e;padding:24px
+  }
+  .card{
+    background:#fff;
+    border:1px solid #ddd7ce;
+    border-radius:13px;
+    margin-bottom:10px;
+    overflow:hidden;
+    cursor:grab;
+  }
+  .card:active{cursor:grabbing}
+  .card.dragging{opacity:.45}
+  .card.drop-target{border-color:#79a88f;box-shadow:0 0 0 2px #79a88f33}
+  .card.done{opacity:.62}
+  .card-main{
+    padding:14px;
+    display:flex;gap:11px;align-items:flex-start;
+  }
+  .check{
+    width:20px;height:20px;border-radius:50%;
+    border:1.5px solid #b7b0a5;flex:none;cursor:pointer;margin-top:1px;background:#fff;
+  }
+  .done .check{background:var(--accent);border-color:var(--accent);position:relative}
+  .done .check:after{content:"✓";color:#fff;position:absolute;font-size:13px;left:3px;top:-1px}
+  .task-body{flex:1;min-width:0}
+  .task-title{font-size:15px;line-height:1.42;word-break:break-word}
+  .done .task-title{text-decoration:line-through}
+  .meta{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+  .pill{
+    font-size:11px;color:#70695f;background:#f3efe8;border-radius:20px;padding:4px 8px
+  }
+  .expand{
+    border:0;background:none;cursor:pointer;color:#7d756b;padding:2px 5px;font-size:15px
+  }
+  .card-tools{display:flex;gap:3px}
+  .icon-btn{
+    border:0;background:transparent;color:#7d756b;cursor:pointer;padding:3px 5px;border-radius:6px
+  }
+  .icon-btn:hover{background:#f2eee8}
+  .details{
+    display:none;
+    border-top:1px solid #ebe6de;
+    background:#fcfbf8;
+    padding:12px 14px 14px 45px;
+  }
+  .card.open .details{display:block}
+  .details textarea{
+    width:100%;min-height:65px;resize:vertical;border:1px solid var(--line);
+    border-radius:8px;padding:8px;background:white
+  }
+  .details-row{display:flex;gap:7px;margin-top:8px;flex-wrap:wrap}
+  .right .cards{background:#fbf8f7}
+  .right .panel-head{background:#fbf1ef}
+  .right .empty{min-height:180px}
+  .section-note{padding:10px 15px;color:var(--muted);font-size:12px;border-bottom:1px solid var(--line)}
+  .footer{
+    text-align:center;color:#8b8379;font-size:12px;margin-top:22px
+  }
+  .footer button{border:0;background:transparent;color:inherit;cursor:pointer;text-decoration:underline;text-underline-offset:3px}
+  .task-title-edit{width:100%;border:1px solid transparent;background:transparent;color:var(--text);font-size:15px;line-height:1.42;padding:1px 3px;border-radius:6px;outline:none}
+  .task-title-edit:hover{border-color:#e0dbd2;background:#fff}
+  .task-title-edit:focus{border-color:#9bbda9;background:#fff;box-shadow:0 0 0 2px #9bbda933}
+  .done .task-title-edit{text-decoration:line-through;color:#746e65}
+  .cards{max-height:calc(100vh - 340px);overflow-y:auto}
+  .session-modal{position:fixed;inset:0;background:#0008;display:none;align-items:center;justify-content:center;padding:20px;z-index:30}
+  .session-modal.show{display:flex}
+  .session-box{width:min(560px,100%);background:var(--panel);border:1px solid var(--line);border-radius:18px;box-shadow:0 20px 70px #0005;padding:22px}
+  .session-box h2{margin:0 0 6px;font-family:Georgia,serif;font-weight:500}
+  .session-box p{color:var(--muted);font-size:13px;line-height:1.5}
+  .session-key{display:flex;gap:8px;margin:14px 0}
+  .session-key input{flex:1;min-width:0;border:1px solid var(--line);border-radius:9px;padding:10px;background:#f7f4ee;font-family:ui-monospace,monospace}
+  .session-actions{display:flex;gap:8px;flex-wrap:wrap}
+  .theme-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin:12px 0 18px}
+  .theme-btn{border:1px solid var(--line);background:var(--panel);color:var(--text);border-radius:8px;padding:8px 5px;cursor:pointer;font-size:11px}
+  .theme-btn.active{outline:2px solid var(--accent);outline-offset:1px}
+  .security-note{font-size:11px;color:var(--muted);margin-top:12px}
+  @media(max-width:600px){.theme-grid{grid-template-columns:repeat(3,1fr)}}
+  .toast{
+    position:fixed;bottom:22px;left:50%;transform:translateX(-50%) translateY(20px);
+    background:#211e1a;color:white;padding:10px 15px;border-radius:9px;font-size:13px;
+    opacity:0;pointer-events:none;transition:.2s;z-index:10
+  }
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+  @media(max-width:1000px){
+    .board{grid-template-columns:190px 1fr}
+    .right{grid-column:1/-1}
+  }
+  @media(max-width:700px){
+    .wrap{padding:22px 12px 45px}
+    h1{font-size:34px}
+    .capture{flex-direction:column;align-items:stretch}
+    .board{grid-template-columns:1fr}
+    .panel{min-height:auto}
+    .right{grid-column:auto}
+  }
 </style>
 </head>
 <body>
-<div class="app">
-<header class="topbar">
-  <div class="brand">
-    <div class="logo">&lt;/&gt;</div>
-    <div><h1 id="programTitle">C Recall</h1><small>Recall code. Track progress. Build mastery.</small></div>
+<div class="wrap">
+  <header>
+    <h1>Daily Sort</h1>
+    <div class="subtitle">Dump everything in. Decide what actually belongs in today.</div>
+  </header>
+
+  <section class="capture">
+    <textarea id="bulkInput" placeholder="Paste tasks here — one task per line&#10;&#10;study for exam&#10;buy shoe powder&#10;call RTO&#10;finish assignment"></textarea>
+    <button class="btn primary" id="addTasks">Add Tasks</button>
+  </section>
+
+  <div class="hint">Drag tasks into a group to categorize them. Drag them to <b>Not Today</b> to take them out of today's work. Click a task to expand its details.</div>
+
+  <div class="toolbar">
+    <button class="btn" id="resetToday">Reset today's groups</button>
+    <button class="btn" id="clearCompleted">Clear completed</button>
+    <button class="btn" id="exportData">Export</button>
+    <button class="btn" id="importBtn">Import</button>
+    <button class="btn" id="sessionBtn">Session</button>
+    <input type="file" id="importFile" accept=".json" hidden>
   </div>
-  <div class="actions">
-    <div class="clock" id="universalClock" title="Universal clock">00:00</div>
-    <button class="btn" onclick="openSettings()">⚙ Settings</button>
-    <button class="btn" onclick="openTransfer()">⇄ Transfer</button>
-    <button class="btn danger" onclick="clearAllData()">Clear Data</button>
-    <button class="btn primary" onclick="checkRecall()">✓ Check Recall</button>
-  </div>
-</header>
 
-<section class="stats">
-  <div class="stat"><div class="stat-label">References</div><div class="stat-value" id="statRefs">0</div></div>
-  <div class="stat"><div class="stat-label">Attempts</div><div class="stat-value" id="statAttempts">0</div></div>
-  <div class="stat"><div class="stat-label">Best</div><div class="stat-value" id="statBest">0%</div></div>
-  <div class="stat"><div class="stat-label">Average</div><div class="stat-value" id="statAverage">0%</div></div>
-  <div class="stat"><div class="stat-label">Streak</div><div class="stat-value" id="statStreak">0</div></div>
-  <div class="stat"><div class="stat-label">Last</div><div class="stat-value" id="statLast">—</div></div>
-</section>
-
-<div class="layout">
-  <aside class="panel sidebar">
-    <div class="panel-head">
-      <div><div class="title">Saved References</div><div class="subtitle">All programs & versions</div></div>
-      <button class="btn" onclick="newReference()">＋</button>
-    </div>
-    <div id="refList" class="ref-list"></div>
-  </aside>
-
-  <main>
+  <main class="board">
     <section class="panel">
       <div class="panel-head">
-        <div><div class="title" id="editorTitle">Recall Editor</div><div class="subtitle" id="editorSubtitle">Write the selected reference from memory</div></div>
-        <div class="actions"><button class="btn" id="editRefBtn" onclick="editReference()">✎ Edit</button><button class="btn" id="removeRefBtn" onclick="removeReference()">Remove</button><button class="btn" id="lockRefBtn" onclick="lockReference()">🔒 Perma Lock</button><button class="btn" onclick="clearAttempt()">Clear Attempt</button><button class="btn primary" id="checkBtn" onclick="checkRecall()">✓ Check Recall</button></div>
+        <div class="panel-title">Groups</div>
+        <div class="count" id="groupCount">0</div>
       </div>
-      <div class="editor-wrap">
-        <div id="lineNumbers">1</div>
-        <textarea id="editor" spellcheck="false" autocomplete="off" autocorrect="off" autocapitalize="off" placeholder="Start typing the program from memory..."></textarea>
+      <div class="section-note">Groups stay forever. Task grouping resets every day.</div>
+      <div class="groups" id="groups"></div>
+      <div class="add-group">
+        <input id="groupInput" placeholder="New group…">
+        <button class="btn" id="addGroup">+</button>
       </div>
-      <div class="editor-footer"><span id="editorInfo">0 lines · 0 characters</span><span>Tab = 4 spaces · Enter = auto-indent</span></div>
     </section>
 
-    <section class="panel result">
-      <div class="result-top">
-        <div class="result-row">
-          <div><div class="score" id="score">—</div><div class="score-label">RECALL ACCURACY</div></div>
-          <div class="result-count" id="count">—</div>
+    <section class="panel">
+      <div class="panel-head">
+        <div>
+          <div class="panel-title">Today</div>
+          <div style="color:var(--muted);font-size:12px;margin-top:3px">Your uncategorized + categorized work</div>
         </div>
-        <div class="result-message" id="message">Write the program and check your recall.</div>
+        <div class="count" id="todayCount">0</div>
       </div>
-      <div id="discrepancies" class="discrepancies"><div class="empty">Your discrepancies will appear here.</div></div>
+      <div class="cards" id="todayCards" data-zone="today"></div>
     </section>
 
-    <section class="panel history">
-      <div class="panel-head"><div><div class="title">Attempt History</div><div class="subtitle">Every recall attempt is saved locally</div></div></div>
-      <div id="history" class="history-list"><div class="empty">No attempts yet.</div></div>
+    <section class="panel right">
+      <div class="panel-head">
+        <div>
+          <div class="panel-title">Not Today</div>
+          <div style="color:var(--muted);font-size:12px;margin-top:3px">Still saved. Just not today's work.</div>
+        </div>
+        <div class="count" id="laterCount">0</div>
+      </div>
+      <div class="cards" id="laterCards" data-zone="later"></div>
     </section>
   </main>
+
+  <div class="footer">Saved locally in this browser. No account, server, or cloud required. · <button id="sessionFooter">Local session</button></div>
+</div>
+<div class="session-modal" id="sessionModal" role="dialog" aria-modal="true" aria-labelledby="sessionTitle">
+  <div class="session-box">
+    <h2 id="sessionTitle">Local Session</h2>
+    <p>Daily Sort uses one local session. Your session key lets you move an encrypted backup to another browser/device. Keep it private.</p>
+    <div class="session-key"><input id="sessionToken" type="password" readonly aria-label="Session key"><button class="btn" id="revealToken">Show</button></div>
+    <div class="session-actions"><button class="btn primary" id="copyToken">Copy key</button><button class="btn" id="newToken">Rotate key</button><button class="btn" id="closeSession">Close</button></div>
+    <div style="margin-top:20px"><b style="font-size:13px">Theme</b><div class="theme-grid" id="themeGrid"></div></div>
+    <div class="security-note">Local-only security note: a person who already has full access to this browser profile can inspect local browser storage. The key protects exported backups; it cannot make a client-only HTML app invisible to a local attacker.</div>
+  </div>
 </div>
 </div>
-
-<dialog id="settingsDialog">
-  <div class="modal-head"><strong>Settings</strong><button class="btn" onclick="closeSettings()">✕</button></div>
-  <div class="settings settings-clean">
-    <div class="settings-section">
-      <div class="settings-section-title">General</div>
-      <div class="field"><label>App Name</label><input id="appName"></div>
-    </div>
-
-    <div class="settings-section">
-      <div class="settings-section-title">Appearance</div>
-      <div class="field"><label>Theme</label><select id="theme"><option value="dark">Dark</option><option value="light">Light</option><option value="paper">Paper</option><option value="midnight">Midnight</option><option value="amoled">AMOLED</option><option value="rose">Rose</option></select></div>
-    </div>
-
-    <div class="settings-section">
-      <div class="settings-section-title">Automatic Day / Night</div>
-      <div class="field"><label>Automatic Theme Switching</label>
-        <select id="autoTheme"><option value="off">Off — use the theme above</option><option value="on">On — switch automatically</option></select>
-      </div>
-      <div id="autoThemeFields">
-        <div class="field"><label>Day Theme</label><select id="dayTheme"><option value="dark">Dark</option><option value="light">Light</option><option value="paper">Paper</option><option value="midnight">Midnight</option><option value="amoled">AMOLED</option><option value="rose">Rose</option></select></div>
-        <div class="field"><label>Day Starts At <span class="field-hint">24-hour</span></label><input id="dayStart" type="text" inputmode="numeric" maxlength="5" placeholder="07:00" value="07:00"></div>
-        <div class="field"><label>Night Theme</label><select id="nightTheme"><option value="dark">Dark</option><option value="light">Light</option><option value="paper">Paper</option><option value="midnight">Midnight</option><option value="amoled">AMOLED</option><option value="rose">Rose</option></select></div>
-        <div class="field"><label>Night Starts At <span class="field-hint">24-hour</span></label><input id="nightStart" type="text" inputmode="numeric" maxlength="5" placeholder="19:00" value="19:00"></div>
-        <div class="note">Times are always entered as HH:MM in 24-hour format, so they stay unambiguous regardless of your clock display setting.</div>
-      </div>
-    </div>
-
-    <div class="settings-section">
-      <div class="settings-section-title">Clock</div>
-      <div class="field"><label>Clock Format</label><select id="clockFormat"><option value="24">24-hour — 14:48:32</option><option value="12">12-hour — 02:48:32</option></select><div class="note">Controls the live clock in the top bar. No AM/PM label is shown.</div></div>
-      <div class="field"><label>Time Zone</label><select id="timezone"></select><div class="note" id="timezoneInfo">Uses the selected IANA timezone and its current UTC offset.</div></div>
-    </div>
-
-    <div class="modal-actions"><button class="btn" onclick="closeSettings()">Cancel</button><button class="btn primary" onclick="saveSettings()">Save</button></div>
-  </div>
-</dialog>
-
-<dialog id="referenceDialog">
-  <div class="modal-head"><strong id="referenceDialogTitle">New Reference</strong><button class="btn" onclick="closeReferenceDialog()">✕</button></div>
-  <div class="settings">
-    <div class="field"><label>Reference Name</label><input id="refName" placeholder="e.g. Array Input Program"></div>
-    <div class="field"><label>C Program — this becomes v1</label><textarea id="refCode" spellcheck="false"></textarea></div>
-    <div class="note">Saving an edited reference creates a new version. Previous versions remain available.</div>
-    <div class="modal-actions"><button class="btn" onclick="closeReferenceDialog()">Cancel</button><button class="btn primary" onclick="saveReferenceDialog()">Save Reference</button></div>
-  </div>
-</dialog>
-
-<dialog id="transferDialog">
-  <div class="modal-head"><strong>Local Account Cache</strong><button class="btn" onclick="closeTransfer()">✕</button></div>
-  <div class="settings">
-    <div class="note" style="margin-bottom:12px">This is a portable local-data token, not a password or server login. It contains your saved references, versions, attempts and settings. Keep it private.</div>
-    <div class="transfer">
-      <div class="field"><label>Export Token</label><textarea id="exportToken" readonly></textarea><button class="btn" style="margin-top:7px" onclick="copyToken()">Copy Token</button></div>
-      <div class="field"><label>Import Token</label><textarea id="importToken" placeholder="Paste a token from another computer"></textarea><button class="btn" style="margin-top:7px" onclick="importToken()">Import</button></div>
-    </div>
-    <div class="modal-actions"><button class="btn" onclick="closeTransfer()">Close</button></div>
-  </div>
-</dialog>
-
-<div id="toast" class="toast"></div>
+<div class="toast" id="toast"></div>
 
 <script>
-const COOKIE_PREFIX="crecall_";
-const COOKIE_CHUNK=3500;
-const SCHEMA=2;
+const STORAGE = "daily-sort-v1";
+const LAST_RESET = "daily-sort-last-reset";
 
-const DEFAULT_CODE=`#include <stdio.h>
+let state = {
+  groups: [],
+  tasks: []
+};
 
-int main()
-{
-    int n, i;
-
-    printf("Enter number of elements: ");
-    scanf("%d", &n);
-
-    int arr[n];
-
-    printf("Enter elements:\\n");
-
-    for (i = 0; i < n; i++)
-    {
-        scanf("%d", &arr[i]);
-    }
-
-    printf("Elements are:\\n");
-
-    for (i = 0; i < n; i++)
-    {
-        printf("%d ", arr[i]);
-    }
-
-    return 0;
-}`;
-
-function blankState(){
-  return {
-    schema:SCHEMA,
-    appName:"C Recall",
-    theme:"dark",
-    autoTheme:"off", dayTheme:"light", nightTheme:"midnight", dayStart:"07:00", nightStart:"19:00", timezone:"local", clockFormat:"24",
-    selectedRef:null,
-    refs:[],
-    attempts:[]
-  };
+function id(){
+  return crypto.randomUUID ? crypto.randomUUID() : Date.now()+"-"+Math.random().toString(16).slice(2);
 }
 
-let state=loadState();
-let editingRefId=null;
-
-function uid(){
-  return crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36)+Math.random().toString(36).slice(2);
+function save(){
+  localStorage.setItem(STORAGE, JSON.stringify(state));
 }
 
-function esc(s){
-  return String(s).replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;").replaceAll("'","&#039;");
-}
-
-function saveState(){
-  localStorage.setItem("c_recall_final",JSON.stringify(state));
-}
-function loadState(){
+function load(){
   try{
-    const raw=localStorage.getItem("c_recall_final");
-    if(raw){
-      const parsed=JSON.parse(raw);
-      if(parsed.refs) return migrate(parsed);
-      return migrateLegacy(parsed);
-    }
+    const raw=localStorage.getItem(STORAGE);
+    if(raw) state=JSON.parse(raw);
+    state.groups=Array.isArray(state.groups)?state.groups:[];
+    state.tasks=Array.isArray(state.tasks)?state.tasks:[];
+    state.tasks.forEach(t=>{if(!t.zone)t.zone="today";if(!("notes" in t))t.notes="";if(!("open" in t))t.open=false;});
   }catch(e){}
-  return blankState();
-}
-function migrateLegacy(old){
-  const out=blankState();
-  if(!old) return out;
-  out.appName=old.appName||old.programName||"C Recall";
-  out.theme=old.theme||"dark";
-  out.autoTheme=old.autoTheme||"off";
-  out.dayTheme=old.dayTheme||"light";
-  out.nightTheme=old.nightTheme||"midnight";
-  out.dayStart=old.dayStart||"07:00";
-  out.nightStart=old.nightStart||"19:00";
-  out.timezone=old.timezone||"local";
-  out.clockFormat=old.clockFormat||"24";
-  if(old.refs){ return migrate(old); }
-  const target=old.target;
-  if(target){
-    const ref={id:uid(),name:old.programName||"C Program",versions:[{version:1,code:target,createdAt:new Date().toISOString()}]};
-    out.refs=[ref]; out.selectedRef=ref.id;
-    out.attempts=(old.attempts||[]).map(a=>({...a,refId:a.refId||ref.id,refVersion:a.refVersion||1}));
-  }
-  return out;
-}
-function migrate(s){
-  const out=blankState();
-  if(s){
-    out.appName=s.appName||s.programName||"C Recall";
-    out.theme=s.theme||"dark";
-    out.autoTheme=s.autoTheme||"off";
-    out.dayTheme=s.dayTheme||"light";
-    out.nightTheme=s.nightTheme||"midnight";
-    out.dayStart=s.dayStart||"07:00";
-    out.nightStart=s.nightStart||"19:00";
-    out.timezone=s.timezone||"local";
-    out.clockFormat=s.clockFormat||"24";
-    out.refs=s.refs||[];
-    out.attempts=s.attempts||[];
-    out.selectedRef=s.selectedRef||(out.refs[0]?.id||null);
-  }
-  return out;
+  dailyResetIfNeeded();
 }
 
-const editor=document.getElementById("editor");
+function todayKey(){
+  const d=new Date();
+  return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
+}
 
-function selectedRef(){
-  return state.refs.find(r=>r.id===state.selectedRef)||state.refs[0]||null;
+function removeDefaultGroups(){
+  const defaults=new Set(["study","work","personal","errands"]);
+  state.groups=state.groups.filter(g=>!(defaults.has(g.id) && ["Study","Work","Personal","Errands"].includes(g.name)));
+  state.tasks.forEach(t=>{
+    if(!state.groups.some(g=>g.id===t.groupId)) t.groupId=null;
+  });
+  save();
 }
-function selectedVersion(r){
-  return r ? r.versions[r.versions.length-1] : null;
-}
-function init(){
-  populateTimezones();
-  if(!state.refs.length){
-    const r={id:uid(),name:"Array Input Program",versions:[{version:1,code:DEFAULT_CODE,createdAt:new Date().toISOString()}]};
-    state.refs=[r];state.selectedRef=r.id;saveState();
+
+function dailyResetIfNeeded(){
+  const key=todayKey();
+  const last=localStorage.getItem(LAST_RESET);
+  if(last !== key){
+    if(last !== null){
+      state.tasks.forEach(t=>{
+        if(t.zone!=="later") t.groupId=null;
+      });
+    }
+    localStorage.setItem(LAST_RESET,key);
+    save();
   }
-  applyTheme();
-  updateUniversalClock();
-  document.getElementById("programTitle").textContent=state.appName;
-  renderRefs(); loadSelected(); updateStats(); renderHistory(); updateLines();
 }
-init();
-setInterval(()=>{applyTheme();updateUniversalClock();},1000);
-updateUniversalClock();
 
-function renderRefs(){
-  const box=document.getElementById("refList");
-  if(!state.refs.length){box.innerHTML='<div class="empty">No references.</div>';return}
-  box.innerHTML=state.refs.map(r=>{
-    const v=r.versions[r.versions.length-1];
-    return `<div class="ref-item ${r.id===state.selectedRef?'active ':''}${r.locked?'locked':''}" onclick="selectRef('${r.id}')">
-      <div class="ref-name">${esc(r.name)}${r.locked?'<span class="lock-badge">🔒</span>':''}</div>
-      <div class="ref-meta">${r.versions.length} saved version${r.versions.length===1?'':'s'} · ${r.versions.reduce((n,v)=>n+1,0)} total${r.locked?' · permanently locked':''}</div>
-      <span class="version-pill">v${v.version}</span>
+function escapeHtml(s){
+  return String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]));
+}
+
+function groupName(gid){
+  return state.groups.find(g=>g.id===gid)?.name || null;
+}
+
+function addTasksFromText(){
+  const box=document.getElementById("bulkInput");
+  const lines=box.value.split(/\r?\n/).map(x=>x.trim()).filter(Boolean);
+  if(!lines.length) return;
+  lines.forEach(text=>{
+    state.tasks.push({
+      id:id(), text, notes:"", groupId:null, zone:"today", done:false, open:false, created:Date.now()
+    });
+  });
+  box.value="";
+  save(); render();
+  toast(lines.length+" task"+(lines.length===1?"":"s")+" added");
+}
+
+function addGroup(){
+  const input=document.getElementById("groupInput");
+  const name=input.value.trim();
+  if(!name)return;
+  if(state.groups.some(g=>g.name.toLowerCase()===name.toLowerCase())){
+    toast("That group already exists"); return;
+  }
+  state.groups.push({id:id(),name});
+  input.value="";
+  save();render();
+}
+
+function taskCard(t){
+  const group=groupName(t.groupId);
+  return `
+  <article class="card ${t.done?"done":""} ${t.open?"open":""}" draggable="true" data-id="${t.id}">
+    <div class="card-main">
+      <button class="check" data-action="complete" title="Complete"></button>
+      <div class="task-body">
+        <input class="task-title-edit" data-action="title" value="${escapeHtml(t.text)}" aria-label="Task title">
+        <div class="meta">
+          ${group?`<span class="pill">${escapeHtml(group)}</span>`:`<span class="pill">Uncategorized</span>`}
+        </div>
+      </div>
+      <div class="card-tools">
+        <button class="icon-btn" data-action="up" title="Move up">↑</button>
+        <button class="icon-btn" data-action="down" title="Move down">↓</button>
+        <button class="icon-btn" data-action="move-later" title="${t.zone==="later"?"Move to Today":"Move to Not Today"}">${t.zone==="later"?"←":"→"}</button>
+        <button class="expand" data-action="expand" title="Expand">${t.open?"⌃":"⌄"}</button>
+      </div>
+    </div>
+    <div class="details">
+      <textarea data-action="notes" placeholder="Notes…">${escapeHtml(t.notes)}</textarea>
+      <div class="details-row">
+        <button class="btn" data-action="uncategorize">Remove group</button>
+        <button class="btn" data-action="move-later">${t.zone==="later"?"Move to Today":"Not Today"}</button>
+        <button class="btn" data-action="delete">Delete</button>
+      </div>
+    </div>
+  </article>`;
+}
+
+function renderGroups(){
+  const el=document.getElementById("groups");
+  document.getElementById("groupCount").textContent=state.groups.length;
+  el.innerHTML=state.groups.map(g=>{
+    const n=state.tasks.filter(t=>t.groupId===g.id).length;
+    return `<div class="group" draggable="true" data-group="${g.id}">
+      <span class="group-dot"></span>
+      <span class="group-name">${escapeHtml(g.name)}</span>
+      <span class="group-num">${n}</span>
     </div>`;
   }).join("");
 }
 
-function selectRef(id){
-  state.selectedRef=id;saveState();loadSelected();renderRefs();clearResult();
-}
-function loadSelected(){
-  const r=selectedRef();
-  if(!r)return;
-  const v=selectedVersion(r);
-  document.getElementById("editorTitle").textContent=r.name;
-  document.getElementById("editorSubtitle").textContent=`Recall ${r.name} · v${v.version}`;
-  editor.value=""; updateLines();
-}
-function newReference(){
-  editingRefId=null;
-  document.getElementById("referenceDialogTitle").textContent="New Reference";
-  document.getElementById("refName").value="";
-  document.getElementById("refCode").value="";
-  document.getElementById("referenceDialog").showModal();
-}
-function editReference(){
-  const r=selectedRef(); if(!r)return;
-  if(r.locked){toast("This reference is permanently locked.");return;}
-  editingRefId=r.id;
-  document.getElementById("referenceDialogTitle").textContent=`New Version · ${r.name}`;
-  document.getElementById("refName").value=r.name;
-  document.getElementById("refCode").value=selectedVersion(r).code;
-  document.getElementById("referenceDialog").showModal();
-}
-function closeReferenceDialog(){document.getElementById("referenceDialog").close()}
-function saveReferenceDialog(){
-  const name=document.getElementById("refName").value.trim()||"Untitled C Program";
-  const code=document.getElementById("refCode").value.replace(/\r/g,"");
-  if(!code.trim()){toast("Add some C code first.");return}
-  if(editingRefId){
-    const r=state.refs.find(x=>x.id===editingRefId);
-    if(!r || r.locked){toast("This reference is permanently locked.");return;}
-    const next=(r.versions.at(-1)?.version||0)+1;
-    r.name=name;r.versions.push({version:next,code,createdAt:new Date().toISOString()});
-    toast(`${r.name} saved as v${next}.`);
-  }else{
-    const r={id:uid(),name,versions:[{version:1,code,createdAt:new Date().toISOString()}]};
-    state.refs.unshift(r);state.selectedRef=r.id;toast("Reference saved as v1.");
-  }
-  saveState();closeReferenceDialog();renderRefs();loadSelected();
-}
-function removeReference(){
-  const r=selectedRef(); if(!r)return;
-  if(r.locked){toast("A permanently locked reference cannot be removed.");return;}
-  if(!confirm(`Remove “${r.name}” and all its versions and attempt history? This cannot be undone.`))return;
-  state.attempts=state.attempts.filter(a=>a.refId!==r.id);
-  const idx=state.refs.findIndex(x=>x.id===r.id);
-  state.refs.splice(idx,1);
-  state.selectedRef=state.refs[Math.max(0,idx-1)]?.id||state.refs[0]?.id||null;
-  saveState();renderRefs();loadSelected();updateStats();renderHistory();clearResult();toast("Reference removed.");
-}
-function lockReference(){
-  const r=selectedRef(); if(!r)return;
-  if(r.locked){toast("This reference is already permanently locked.");return;}
-  if(!confirm(`PERMANENTLY LOCK “${r.name}”?\n\nAfter locking, its code, versions, name, and progress can never be changed or deleted from this app.`))return;
-  r.locked=true;
-  saveState();renderRefs();loadSelected();toast("Reference permanently locked.");
-}
-document.getElementById("editor").addEventListener("dblclick",()=>{if(selectedRef())editReference()});
+function renderCards(){
+  const today=state.tasks.filter(t=>t.zone!=="later");
+  const later=state.tasks.filter(t=>t.zone==="later");
+  const tc=document.getElementById("todayCards");
+  const lc=document.getElementById("laterCards");
 
-function updateLines(){
-  const lines=editor.value.split("\n").length;
-  document.getElementById("lineNumbers").textContent=Array.from({length:lines},(_,i)=>i+1).join("\n");
-  document.getElementById("editorInfo").textContent=`${lines} lines · ${editor.value.length} characters`;
-}
-editor.addEventListener("input",updateLines);
-editor.addEventListener("scroll",()=>document.getElementById("lineNumbers").scrollTop=editor.scrollTop);
+  document.getElementById("todayCount").textContent=today.length;
+  document.getElementById("laterCount").textContent=later.length;
 
-editor.addEventListener("keydown",e=>{
-  if(e.key==="Tab"){
-    e.preventDefault();const s=editor.selectionStart,end=editor.selectionEnd;
-    if(e.shiftKey){
-      const before=editor.value.slice(0,s),ls=before.lastIndexOf("\n")+1,line=editor.value.slice(ls,s);
-      if(line.startsWith("    "))editor.setRangeText("",ls,ls+4,"end");
-    }else editor.setRangeText("    ",s,end,"end");
-    updateLines();return;
-  }
-  if(e.key==="Enter"){
-    e.preventDefault();const s=editor.selectionStart,before=editor.value.slice(0,s),ls=before.lastIndexOf("\n")+1,line=before.slice(ls);
-    let ind=line.match(/^[ \t]*/)?.[0]||"",trim=line.trim();
-    if(trim.endsWith("{"))ind+="    ";
-    if(trim==="}"||trim.startsWith("}"))ind=ind.slice(0,Math.max(0,ind.length-4));
-    editor.setRangeText("\n"+ind,s,editor.selectionEnd,"end");updateLines();
-  }
-  if(e.key==="}" && editor.selectionStart===editor.selectionEnd){
-    const s=editor.selectionStart,b=editor.value.slice(0,s),ls=b.lastIndexOf("\n")+1,line=b.slice(ls);
-    if(/^[ \t]+$/.test(line)){e.preventDefault();const reduced=line.length>=4?line.slice(0,-4):"";editor.setRangeText(reduced+"}",ls,s,"end");updateLines()}
-  }
+  tc.innerHTML=today.length ? today.map(taskCard).join("") :
+    `<div class="empty">No tasks for today.<br>Paste a bunch above and start sorting.</div>`;
+  lc.innerHTML=later.length ? later.map(taskCard).join("") :
+    `<div class="empty">Nothing parked here.<br>Drag a task here when it isn't today's problem.</div>`;
+}
+
+function render(){
+  renderGroups(); renderCards(); bindDnD(); bindActions();
+}
+
+
+function moveTask(tid, direction){
+  const index=state.tasks.findIndex(t=>t.id===tid);
+  if(index<0)return;
+
+  const task=state.tasks[index];
+  const sameZone=state.tasks
+    .map((t,i)=>({t,i}))
+    .filter(x=>(x.t.zone==="later"?"later":"today") === (task.zone==="later"?"later":"today"));
+
+  const pos=sameZone.findIndex(x=>x.i===index);
+  const targetPos=pos+direction;
+  if(targetPos<0 || targetPos>=sameZone.length)return;
+
+  const targetIndex=sameZone[targetPos].i;
+  [state.tasks[index],state.tasks[targetIndex]]=
+    [state.tasks[targetIndex],state.tasks[index]];
+
+  save();
+  render();
+}
+
+function moveTaskBefore(dragId, targetId){
+  if(dragId===targetId)return;
+  const from=state.tasks.findIndex(t=>t.id===dragId);
+  const to=state.tasks.findIndex(t=>t.id===targetId);
+  if(from<0 || to<0)return;
+
+  const dragged=state.tasks[from];
+  const target=state.tasks[to];
+
+  // Reordering is only within the same column.
+  if((dragged.zone==="later") !== (target.zone==="later"))return;
+
+  state.tasks.splice(from,1);
+  const newTarget=state.tasks.findIndex(t=>t.id===targetId);
+  state.tasks.splice(newTarget,0,dragged);
+  save();
+  render();
+}
+
+function bindActions(){
+  document.querySelectorAll(".card").forEach(card=>{
+    const tid=card.dataset.id;
+    const t=state.tasks.find(x=>x.id===tid);
+    card.querySelector('[data-action="complete"]').onclick=e=>{
+      e.stopPropagation(); t.done=!t.done; save();render();
+    };
+    card.querySelector('[data-action="up"]').onclick=e=>{
+      e.stopPropagation(); moveTask(tid,-1);
+    };
+    card.querySelector('[data-action="down"]').onclick=e=>{
+      e.stopPropagation(); moveTask(tid,1);
+    };
+    card.querySelector('[data-action="expand"]').onclick=e=>{
+      e.stopPropagation(); t.open=!t.open; save();render();
+    };
+    card.querySelector('[data-action="title"]').oninput=e=>{
+      t.text=e.target.value; save();
+    };
+    card.querySelector('[data-action="title"]').onkeydown=e=>{
+      if(e.key==="Enter"){e.preventDefault();e.target.blur();}
+    };
+    card.querySelector('[data-action="notes"]').oninput=e=>{
+      t.notes=e.target.value; save();
+    };
+    card.querySelector('[data-action="uncategorize"]').onclick=()=>{
+      t.groupId=null;save();render();
+    };
+    card.querySelectorAll('[data-action="move-later"]').forEach(btn=>{
+      btn.onclick=e=>{
+        e.stopPropagation();
+        t.zone=t.zone==="later"?"today":"later";save();render();
+        toast(t.zone==="later"?"Saved to Not Today":"Moved back to Today");
+      };
+    });
+    card.querySelector('[data-action="delete"]').onclick=()=>{
+      state.tasks=state.tasks.filter(x=>x.id!==tid);save();render();
+    };
+  });
+
+  document.querySelectorAll(".group").forEach(g=>{
+    g.onclick=()=>{
+      const gid=g.dataset.group;
+      const t=state.tasks.find(x=>x.id===window.dragTaskId);
+      if(t){t.groupId=gid;t.zone="today";save();render();}
+    };
+  });
+}
+
+function bindDnD(){
+  document.querySelectorAll(".card").forEach(card=>{
+    card.addEventListener("dragstart",e=>{
+      window.dragTaskId=card.dataset.id;
+      e.dataTransfer.setData("text/plain",card.dataset.id);
+      e.dataTransfer.effectAllowed="move";
+      card.classList.add("dragging");
+    });
+
+    card.addEventListener("dragend",()=>{
+      card.classList.remove("dragging");
+      document.querySelectorAll(".card").forEach(c=>c.classList.remove("drop-target"));
+    });
+
+    card.addEventListener("dragover",e=>{
+      e.preventDefault();
+      if(window.dragTaskId && window.dragTaskId!==card.dataset.id){
+        const dragged=state.tasks.find(t=>t.id===window.dragTaskId);
+        const target=state.tasks.find(t=>t.id===card.dataset.id);
+        if(dragged && target &&
+           (dragged.zone==="later") === (target.zone==="later")){
+          card.classList.add("drop-target");
+          e.dataTransfer.dropEffect="move";
+        }
+      }
+    });
+
+    card.addEventListener("dragleave",()=>{
+      card.classList.remove("drop-target");
+    });
+
+    card.addEventListener("drop",e=>{
+      e.preventDefault();
+      e.stopPropagation();
+      card.classList.remove("drop-target");
+
+      const dragId=e.dataTransfer.getData("text/plain");
+      const targetId=card.dataset.id;
+      if(dragId && dragId!==targetId){
+        moveTaskBefore(dragId,targetId);
+      }
+    });
+  });
+
+  document.querySelectorAll(".group").forEach(g=>{
+    g.addEventListener("dragover",e=>{e.preventDefault();g.classList.add("dragover")});
+    g.addEventListener("dragleave",()=>g.classList.remove("dragover"));
+    g.addEventListener("drop",e=>{
+      e.preventDefault();g.classList.remove("dragover");
+      const t=state.tasks.find(x=>x.id===e.dataTransfer.getData("text/plain"));
+      if(t){t.groupId=g.dataset.group;t.zone="today";save();render();toast("Task grouped")}
+    });
+  });
+
+  document.querySelectorAll(".cards").forEach(zone=>{
+    zone.addEventListener("dragover",e=>{e.preventDefault();zone.classList.add("dragover")});
+    zone.addEventListener("dragleave",()=>zone.classList.remove("dragover"));
+    zone.addEventListener("drop",e=>{
+      e.preventDefault();zone.classList.remove("dragover");
+      const t=state.tasks.find(x=>x.id===e.dataTransfer.getData("text/plain"));
+      if(t){
+        t.zone=zone.dataset.zone;
+        save();render();
+        toast(zone.dataset.zone==="later"?"Moved to Not Today":"Moved to Today");
+      }
+    });
+  });
+}
+
+function resetSorting(){
+  state.tasks.forEach(t=>{if(t.zone!=="later") t.groupId=null;});
+  save();render();toast("Today's groups reset");
+}
+
+function clearCompleted(){
+  const n=state.tasks.length;
+  state.tasks=state.tasks.filter(t=>!t.done);
+  save();render();toast((n-state.tasks.length)+" completed task"+(n-state.tasks.length===1?"":"s")+" cleared");
+}
+
+function exportData(){
+  const blob=new Blob([JSON.stringify(state,null,2)],{type:"application/json"});
+  const a=document.createElement("a");
+  a.href=URL.createObjectURL(blob);
+  a.download="daily-sort-backup.json";
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+function importData(file){
+  const r=new FileReader();
+  r.onload=()=>{
+    try{
+      const x=JSON.parse(r.result);
+      if(!Array.isArray(x.tasks)||!Array.isArray(x.groups))throw Error();
+      state=x;save();render();toast("Imported");
+    }catch(e){toast("Invalid backup file")}
+  };
+  r.readAsText(file);
+}
+
+const THEMES={
+  "Paper":{"bg":"#f7f5f0","panel":"#fffdf9","line":"#e4ded4","text":"#171513","muted":"#746e65","accent":"#4d8f70","accentSoft":"#e3f1e9"},
+  "Midnight":{"bg":"#101114","panel":"#17191d","line":"#2a2d33","text":"#f2f3f5","muted":"#a4a8b0","accent":"#78c7a0","accentSoft":"#193327"},
+  "AMOLED":{"bg":"#000","panel":"#080808","line":"#222","text":"#fff","muted":"#888","accent":"#00e676","accentSoft":"#062b18"},
+  "Slate":{"bg":"#e9edf2","panel":"#f8fafc","line":"#cbd5e1","text":"#172033","muted":"#64748b","accent":"#4f6fae","accentSoft":"#e5ecf8"},
+  "Ocean":{"bg":"#eaf6f8","panel":"#fbffff","line":"#c9e5e8","text":"#12343b","muted":"#5c7f85","accent":"#248fa0","accentSoft":"#dff3f5"},
+  "Forest":{"bg":"#eef4ec","panel":"#fbfdf9","line":"#cfdccc","text":"#1d2c1e","muted":"#687568","accent":"#4f8a54","accentSoft":"#e2f0e2"},
+  "Lavender":{"bg":"#f4f0fa","panel":"#fdfbff","line":"#ddd2ea","text":"#282039","muted":"#766b85","accent":"#8064a8","accentSoft":"#eee7f7"},
+  "Rose":{"bg":"#fbf0f2","panel":"#fffafb","line":"#ead1d6","text":"#321d23","muted":"#80666d","accent":"#b45d72","accentSoft":"#f6e2e7"},
+  "Solarized":{"bg":"#fdf6e3","panel":"#fffaf0","line":"#eee8d5","text":"#073642","muted":"#657b83","accent":"#268bd2","accentSoft":"#e1f0fb"},
+  "Monochrome":{"bg":"#eeeeee","panel":"#fff","line":"#c9c9c9","text":"#111","muted":"#666","accent":"#333","accentSoft":"#e2e2e2"},
+  "Dracula":{"bg":"#282a36","panel":"#343746","line":"#494c5e","text":"#f8f8f2","muted":"#b8b8c6","accent":"#bd93f9","accentSoft":"#403450"},
+  "Nord":{"bg":"#e5e9f0","panel":"#f8fafc","line":"#c7d0dc","text":"#2e3440","muted":"#667085","accent":"#5e81ac","accentSoft":"#e1e9f2"},
+  "Gruvbox":{"bg":"#282828","panel":"#32302f","line":"#504945","text":"#ebdbb2","muted":"#a89984","accent":"#b8bb26","accentSoft":"#3b421d"},
+  "Cyber":{"bg":"#080b10","panel":"#101722","line":"#263344","text":"#d9f7ff","muted":"#7da0ad","accent":"#00d9ff","accentSoft":"#082d36"},
+  "Terminal":{"bg":"#071107","panel":"#0d190d","line":"#1d351d","text":"#b7ffb7","muted":"#6aa56a","accent":"#39ff74","accentSoft":"#10351b"},
+  "Coffee":{"bg":"#f1e8dc","panel":"#fffaf3","line":"#ddcbb7","text":"#34261d","muted":"#7b6757","accent":"#946b45","accentSoft":"#efe2d2"},
+  "Paper Blue":{"bg":"#eef3f8","panel":"#ffffff","line":"#d2dce7","text":"#17212b","muted":"#637181","accent":"#3977a8","accentSoft":"#e4eef7"},
+  "Paper Green":{"bg":"#eff5ee","panel":"#ffffff","line":"#d3e0d1","text":"#1d2a1e","muted":"#647064","accent":"#43834a","accentSoft":"#e3f0e4"},
+  "Sunset":{"bg":"#fff0e8","panel":"#fffaf7","line":"#ead2c5","text":"#35201a","muted":"#80645b","accent":"#d16b42","accentSoft":"#f8e1d6"},
+  "Plum":{"bg":"#241b28","panel":"#302333","line":"#4c384f","text":"#f5e8f2","muted":"#bba7b7","accent":"#d78bc1","accentSoft":"#4b2f45"}
+};
+const THEME_KEY="daily-sort-theme";
+const SESSION_KEY="daily-sort-session-key";
+const encoder=new TextEncoder();
+function bytesToB64(bytes){let s="";bytes.forEach(b=>s+=String.fromCharCode(b));return btoa(s).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/g,"");}
+function b64ToBytes(s){s=s.replace(/-/g,"+").replace(/_/g,"/");while(s.length%4)s+="=";const bin=atob(s);return Uint8Array.from(bin,c=>c.charCodeAt(0));}
+function randomToken(){const a=new Uint8Array(24);crypto.getRandomValues(a);return bytesToB64(a);}
+function getSessionToken(){let t=localStorage.getItem(SESSION_KEY);if(!t){t=randomToken();localStorage.setItem(SESSION_KEY,t)}return t}
+function applyTheme(name){const t=THEMES[name]||THEMES.Paper;const r=document.documentElement;r.style.setProperty("--bg",t.bg);r.style.setProperty("--panel",t.panel);r.style.setProperty("--line",t.line);r.style.setProperty("--text",t.text);r.style.setProperty("--muted",t.muted);r.style.setProperty("--accent",t.accent);r.style.setProperty("--accent-soft",t.accentSoft);localStorage.setItem(THEME_KEY,name);document.querySelectorAll(".theme-btn").forEach(b=>b.classList.toggle("active",b.dataset.theme===name));}
+function renderThemes(){const grid=document.getElementById("themeGrid");grid.innerHTML=Object.keys(THEMES).map(n=>`<button class="theme-btn" data-theme="${escapeHtml(n)}">${escapeHtml(n)}</button>`).join("");grid.querySelectorAll(".theme-btn").forEach(b=>b.onclick=()=>applyTheme(b.dataset.theme));applyTheme(localStorage.getItem(THEME_KEY)||"Paper");}
+async function deriveKey(token,salt){const base=await crypto.subtle.importKey("raw",encoder.encode(token),"PBKDF2",false,["deriveKey"]);return crypto.subtle.deriveKey({name:"PBKDF2",salt,iterations:180000,hash:"SHA-256"},base,{name:"AES-GCM",length:256},false,["encrypt","decrypt"]);}
+async let toastTimer;
+function toast(msg){
+  const el=document.getElementById("toast");
+  el.textContent=msg;el.classList.add("show");
+  clearTimeout(toastTimer);toastTimer=setTimeout(()=>el.classList.remove("show"),1800);
+}
+
+document.getElementById("addTasks").onclick=addTasksFromText;
+document.getElementById("bulkInput").addEventListener("keydown",e=>{
+  if((e.ctrlKey||e.metaKey)&&e.key==="Enter")addTasksFromText();
 });
+document.getElementById("addGroup").onclick=addGroup;
+document.getElementById("groupInput").addEventListener("keydown",e=>{if(e.key==="Enter")addGroup()});
+document.getElementById("resetToday").onclick=resetSorting;
+document.getElementById("clearCompleted").onclick=clearCompleted;
+document.getElementById("exportData").onclick=exportData;
+document.getElementById("importBtn").onclick=()=>document.getElementById("importFile").click();
+document.getElementById("importFile").onchange=e=>{if(e.target.files[0])importData(e.target.files[0]);e.target.value=""};
+document.getElementById("sessionBtn").onclick=openSession;
+document.getElementById("sessionFooter").onclick=openSession;
+document.getElementById("closeSession").onclick=closeSession;
+document.getElementById("sessionModal").onclick=e=>{if(e.target.id==="sessionModal")closeSession()};
+document.getElementById("revealToken").onclick=()=>{const x=document.getElementById("sessionToken");x.type=x.type==="password"?"text":"password";document.getElementById("revealToken").textContent=x.type==="password"?"Show":"Hide"};
+document.getElementById("copyToken").onclick=async()=>{await navigator.clipboard.writeText(getSessionToken());toast("Session key copied")};
+document.getElementById("newToken").onclick=()=>{if(confirm("Rotate the session key? Existing exported backups will keep their old key.")){localStorage.setItem(SESSION_KEY,randomToken());document.getElementById("sessionToken").value=getSessionToken();toast("Session key rotated")}};
 
-function tokens(line){
-  return line.match(/"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|\/\/.*|\/\*|\*\/|==|!=|<=|>=|\+\+|--|&&|\|\||->|[A-Za-z_]\w*|\d+(?:\.\d+)?|[^\s]/g)||[];
-}
-function similarity(a,b){
-  const A=tokens(a),B=tokens(b);if(!A.length&&!B.length)return 1;if(!A.length||!B.length)return 0;
-  const d=Array.from({length:A.length+1},()=>Array(B.length+1).fill(0));
-  for(let i=1;i<=A.length;i++)for(let j=1;j<=B.length;j++)d[i][j]=A[i-1]===B[j-1]?d[i-1][j-1]+1:Math.max(d[i-1][j],d[i][j-1]);
-  return 2*d[A.length][B.length]/(A.length+B.length);
-}
-function align(expected,actual){
-  const n=expected.length,m=actual.length,GAP=1.15;
-  const d=Array.from({length:n+1},()=>Array(m+1).fill(0)),p=Array.from({length:n+1},()=>Array(m+1).fill(""));
-  for(let i=1;i<=n;i++){d[i][0]=i*GAP;p[i][0]="u"}for(let j=1;j<=m;j++){d[0][j]=j*GAP;p[0][j]="l"}
-  for(let i=1;i<=n;i++)for(let j=1;j<=m;j++){
-    const diag=d[i-1][j-1]+1-similarity(expected[i-1].text,actual[j-1].text),up=d[i-1][j]+GAP,left=d[i][j-1]+GAP,b=Math.min(diag,up,left);
-    d[i][j]=b;p[i][j]=b===diag?"d":b===up?"u":"l";
+load();
+removeDefaultGroups();
+render();
+
+// If the browser stays open across midnight, check every minute and reset automatically.
+setInterval(()=>{
+  const key=todayKey();
+  if(localStorage.getItem(LAST_RESET)!==key){
+    dailyResetIfNeeded();
+    render();
+    toast("New day — Today survived; groups reset");
   }
-  const out=[];let i=n,j=m;while(i||j){if(p[i]?.[j]==="d"){out.unshift({expected:expected[i-1],actual:actual[j-1]});i--;j--}else if(p[i]?.[j]==="u"){out.unshift({expected:expected[i-1],actual:null});i--}else{out.unshift({expected:null,actual:actual[j-1]});j--}}
-  return out;
-}
-function charDiff(a,b){
-  const n=a.length,m=b.length,d=Array.from({length:n+1},()=>Array(m+1).fill(0));
-  for(let i=n-1;i>=0;i--)for(let j=m-1;j>=0;j--)d[i][j]=a[i]===b[j]?d[i+1][j+1]+1:Math.max(d[i+1][j],d[i][j+1]);
-  let i=0,j=0,A=[],B=[],wa="",wb="";
-  const flush=()=>{if(wa){A.push(`<span class="wrong">${esc(wa)}</span>`);wa=""}if(wb){B.push(`<span class="right">${esc(wb)}</span>`);wb=""}};
-  while(i<n||j<m){
-    if(i<n&&j<m&&a[i]===b[j]){flush();A.push(esc(a[i]));B.push(esc(b[j]));i++;j++}
-    else if(j<m&&(i>=n||d[i][j+1]>=d[i+1][j])){wb+=b[j];j++}
-    else{wa+=a[i];i++}
-  }
-  flush();return {a:A.join(""),b:B.join("")};
-}
-function checkRecall(){
-  const r=selectedRef();if(!r){toast("Create a reference first.");return}
-  const target=selectedVersion(r).code.replace(/\r/g,"").split("\n").map((text,i)=>({text,number:i+1}));
-  const actual=editor.value.replace(/\r/g,"").split("\n").map((text,i)=>({text,number:i+1}));
-  const rows=align(target,actual),errors=[];
-  for(const x of rows){
-    if(!x.expected){errors.push({type:"EXTRA",line:x.actual.number,actual:x.actual.text,expected:""});continue}
-    if(!x.actual){errors.push({type:"MISSING",line:x.expected.number,actual:"",expected:x.expected.text});continue}
-    if(x.expected.text!==x.actual.text)errors.push({type:"CHANGE",line:x.actual.number,actual:x.actual.text,expected:x.expected.text});
-  }
-  const meaningful=target.filter(x=>x.text.trim()).length;
-  const score=meaningful?Math.max(0,Math.round(100*(1-errors.length/meaningful))):100;
-  renderResult(score,errors);
-  state.attempts.unshift({id:uid(),refId:r.id,refVersion:selectedVersion(r).version,score,errors:errors.length,date:new Date().toISOString()});
-  state.attempts=state.attempts.slice(0,100);saveState();updateStats();renderHistory();
-}
-function renderResult(score,items){
-  document.getElementById("score").textContent=score+"%";
-  document.getElementById("count").textContent=items.length?`${items.length} discrepancies`:"Perfect recall";
-  document.getElementById("message").textContent=score===100?"Exact recall. Nothing slipped.":score>=90?"Very close. Fix the small details.":score>=75?"Good recall. A few details slipped.":score>=50?"The structure is there. Drill the exact code.":"This one needs another recall pass.";
-  const box=document.getElementById("discrepancies");
-  if(!items.length){box.innerHTML='<div class="empty">✓ Exact match</div>';return}
-  box.innerHTML=items.map((d,i)=>differenceCard(d,i+1)).join("");
-}
-function differenceCard(d,n){
-  if(d.type==="CHANGE"){
-    const x=charDiff(d.actual,d.expected);
-    return `<div class="diff"><div class="diff-head"><span class="diff-number">#${n}</span><span class="diff-location">Line ${d.line}</span><span class="diff-type">CODE</span></div><div class="diff-label">Wrong</div><div class="code-line">${x.a}</div><div class="diff-label">Right</div><div class="code-line">${x.b}</div></div>`;
-  }
-  if(d.type==="MISSING"){
-    return `<div class="diff"><div class="diff-head"><span class="diff-number">#${n}</span><span class="diff-location">Expected line ${d.line}</span><span class="diff-type">MISSING</span></div><div class="diff-label">Wrong</div><div class="code-line"><span class="empty-change">No line written</span></div><div class="diff-label">Right</div><div class="code-line"><span class="right">${esc(d.expected)}</span></div></div>`;
-  }
-  return `<div class="diff"><div class="diff-head"><span class="diff-number">#${n}</span><span class="diff-location">Line ${d.line}</span><span class="diff-type">EXTRA</span></div><div class="diff-label">Wrong</div><div class="code-line"><span class="wrong">${esc(d.actual)}</span></div><div class="diff-label">Right</div><div class="code-line"><span class="empty-change">No line expected here</span></div></div>`;
-}
-function clearAttempt(){editor.value="";updateLines();clearResult()}
-function clearResult(){document.getElementById("score").textContent="—";document.getElementById("count").textContent="—";document.getElementById("message").textContent="Write the program and check your recall.";document.getElementById("discrepancies").innerHTML='<div class="empty">Your discrepancies will appear here.</div>'}
-
-function updateStats(){
-  const a=state.attempts;document.getElementById("statRefs").textContent=state.refs.length;document.getElementById("statAttempts").textContent=a.length;
-  if(!a.length){document.getElementById("statBest").textContent="0%";document.getElementById("statAverage").textContent="0%";document.getElementById("statStreak").textContent="0";document.getElementById("statLast").textContent="—";return}
-  const scores=a.map(x=>x.score);document.getElementById("statBest").textContent=Math.max(...scores)+"%";document.getElementById("statAverage").textContent=Math.round(scores.reduce((x,y)=>x+y,0)/scores.length)+"%";document.getElementById("statLast").textContent=a[0].score+"%";
-  let streak=0;for(const x of a){if(x.score>=80)streak++;else break}document.getElementById("statStreak").textContent=streak;
-}
-function renderHistory(){
-  const box=document.getElementById("history");if(!state.attempts.length){box.innerHTML='<div class="empty">No attempts yet.</div>';return}
-  box.innerHTML=state.attempts.slice(0,30).map(a=>{const r=state.refs.find(x=>x.id===a.refId);return `<div class="history-row"><div class="history-score">${a.score}%</div><div>${esc(r?.name||"Deleted reference")} · v${a.refVersion}<div class="history-date">${esc(new Date(a.date).toLocaleString())} · ${a.errors} discrepancies</div></div><div class="badge">${a.score===100?"PERFECT":a.score>=80?"GOOD":"DRILL"}</div></div>`}).join("");
-}
-
-function updateUniversalClock(){
-  const el=document.getElementById("universalClock"); if(!el)return;
-  const zone=effectiveTimeZone();
-  try{
-    const opts={timeZone:zone,hour:"2-digit",minute:"2-digit",second:"2-digit",hourCycle:state.clockFormat==="12"?"h12":"h23"};
-    let value=new Intl.DateTimeFormat("en-US",opts).format(new Date());
-    if(state.clockFormat==="12") value=value.replace(/\s*(AM|PM)$/i,"");
-    el.textContent=value;
-    el.title=`${zone} · ${getTimezoneOffset(zone)}`;
-  }catch(e){el.textContent="--:--:--";}
-}
-
-function effectiveTimeZone(){
-  if(state.timezone && state.timezone!=="local") return state.timezone;
-  return Intl.DateTimeFormat().resolvedOptions().timeZone;
-}
-function minutesInZone(){
-  const parts=new Intl.DateTimeFormat("en-GB",{timeZone:effectiveTimeZone(),hour:"2-digit",minute:"2-digit",hourCycle:"h23"}).formatToParts(new Date());
-  return Number(parts.find(x=>x.type==="hour")?.value||0)*60+Number(parts.find(x=>x.type==="minute")?.value||0);
-}
-function getTimezoneOffset(zone){
-  try{
-    const parts=new Intl.DateTimeFormat("en-US",{timeZone:zone,timeZoneName:"longOffset",hour:"2-digit",minute:"2-digit"}).formatToParts(new Date());
-    const part=parts.find(p=>p.type==="timeZoneName");
-    return part ? part.value.replace("GMT","UTC") : "UTC";
-  }catch(e){return "UTC";}
-}
-function populateTimezones(){
-  const select=document.getElementById("timezone"); if(!select)return;
-  const browser=Intl.DateTimeFormat().resolvedOptions().timeZone||"UTC";
-  const current=state.timezone||"local";
-  let zones=typeof Intl.supportedValuesOf==="function" ? Intl.supportedValuesOf("timeZone") : [browser];
-  if(!zones.includes("UTC"))zones.unshift("UTC");
-  if(!zones.includes(browser))zones.push(browser);
-  zones=[...new Set(zones)].sort((a,b)=>a.localeCompare(b));
-  select.innerHTML='<option value="local">Browser / System — '+esc(browser)+' — '+getTimezoneOffset(browser)+'</option>'+zones.map(z=>`<option value="${esc(z)}">${esc(z)} — ${esc(getTimezoneOffset(z))}</option>`).join("");
-  select.value=zones.includes(current)?current:"local";
-  updateTimezoneInfo();
-}
-function updateTimezoneInfo(){
-  const select=document.getElementById("timezone"),info=document.getElementById("timezoneInfo"); if(!select||!info)return;
-  const browser=Intl.DateTimeFormat().resolvedOptions().timeZone||"UTC"; const zone=select.value==="local"?browser:select.value;
-  info.textContent=`${zone} — ${getTimezoneOffset(zone)} now · IANA tzdb via browser ICU`;
-}
-document.getElementById("timezone")?.addEventListener("change",updateTimezoneInfo);
-
-function updateAutoThemeFields(){
-  const on=document.getElementById("autoTheme")?.value==="on";
-  const box=document.getElementById("autoThemeFields");
-  if(box) box.classList.toggle("disabled",!on);
-}
-document.getElementById("autoTheme")?.addEventListener("change",updateAutoThemeFields);
-
-function applyTheme(){
-  let theme=state.theme||"dark";
-  if(state.autoTheme==="on"){
-    const now=minutesInZone();
-    const [dh,dm]=(state.dayStart||"07:00").split(":").map(Number);
-    const [nh,nm]=(state.nightStart||"19:00").split(":").map(Number);
-    const day=dh*60+dm, night=nh*60+nm;
-    const isDay = day<night ? now>=day && now<night : now>=day || now<night;
-    theme=isDay ? (state.dayTheme||"light") : (state.nightTheme||"midnight");
-  }
-  document.documentElement.dataset.theme=theme;
-}
-function openSettings(){
-  document.getElementById("appName").value=state.appName||"C Recall";
-  document.getElementById("theme").value=state.theme||"dark";
-  document.getElementById("autoTheme").value=state.autoTheme||"off";
-  document.getElementById("dayTheme").value=state.dayTheme||"light";
-  document.getElementById("nightTheme").value=state.nightTheme||"midnight";
-  document.getElementById("dayStart").value=state.dayStart||"07:00";
-  document.getElementById("nightStart").value=state.nightStart||"19:00";
-  populateTimezones();
-  document.getElementById("clockFormat").value=state.clockFormat||"24";
-  document.getElementById("timezone").value=state.timezone||"local";
-  updateTimezoneInfo();
-  updateAutoThemeFields();
-  document.getElementById("settingsDialog").showModal();
-}
-function closeSettings(){document.getElementById("settingsDialog").close()}
-function normalize24Time(value,fallback){
-  const m=String(value||"").trim().match(/^(\d{1,2}):(\d{2})$/);
-  if(!m) return fallback;
-  const h=Number(m[1]), min=Number(m[2]);
-  return h>=0 && h<=23 && min>=0 && min<=59 ? String(h).padStart(2,"0")+":"+String(min).padStart(2,"0") : fallback;
-}
-
-function saveSettings(){
-  state.appName=document.getElementById("appName").value.trim()||"C Recall";
-  state.theme=document.getElementById("theme").value;
-  state.autoTheme=document.getElementById("autoTheme").value;
-  state.dayTheme=document.getElementById("dayTheme").value;
-  state.nightTheme=document.getElementById("nightTheme").value;
-  state.dayStart=document.getElementById("dayStart").value||"07:00";
-  state.nightStart=document.getElementById("nightStart").value||"19:00";
-  state.clockFormat=document.getElementById("clockFormat").value||"24";
-  state.timezone=document.getElementById("timezone").value||"local";
-  applyTheme();
-  updateUniversalClock();
-  document.getElementById("programTitle").textContent=state.appName;
-  saveState();closeSettings();toast("Settings saved.");
-}
-
-function openTransfer(){
-  document.getElementById("exportToken").value=makeToken();
-  document.getElementById("importToken").value="";
-  document.getElementById("transferDialog").showModal();
-}
-function closeTransfer(){document.getElementById("transferDialog").close()}
-function base64url(s){return btoa(unescape(encodeURIComponent(s))).replaceAll("+","-").replaceAll("/","_").replaceAll("=","")}
-function fromBase64url(s){s=s.replaceAll("-","+").replaceAll("_","/");while(s.length%4)s+="=";return decodeURIComponent(escape(atob(s)))}
-function makeToken(){
-  const payload={format:"C-RECALL-TRANSFER",version:1,createdAt:new Date().toISOString(),state};
-  return "CRECALL1."+base64url(JSON.stringify(payload));
-}
-async function copyToken(){try{await navigator.clipboard.writeText(document.getElementById("exportToken").value);toast("Transfer token copied.")}catch{toast("Copy failed — select and copy the token.")}}
-function importToken(){
-  try{
-    const raw=document.getElementById("importToken").value.trim();if(!raw.startsWith("CRECALL1."))throw new Error("Invalid token");
-    const p=JSON.parse(fromBase64url(raw.slice(9)));
-    if(p.format!=="C-RECALL-TRANSFER")throw new Error("Invalid token");
-    state=migrate(p.state);saveState();applyTheme();document.getElementById("programTitle").textContent=state.appName;renderRefs();loadSelected();updateStats();renderHistory();closeTransfer();toast("Local session imported.");
-  }catch(e){toast("That transfer token is invalid.")}
-}
-
-function startUniversalClock(){
-  updateUniversalClock();
-  clearInterval(window._universalClockTimer);
-  window._universalClockTimer=setInterval(updateUniversalClock,1000);
-}
-
-function clearAllData(){
-  if(!confirm("This clears all C Recall cookies, references, versions and attempt history on this browser. Continue?"))return;
-  localStorage.removeItem("c_recall_final");
-  state=blankState();saveState();init();toast("All local C Recall data was cleared.");
-}
-function toast(msg){const t=document.getElementById("toast");t.textContent=msg;t.classList.add("show");clearTimeout(window._toast);window._toast=setTimeout(()=>t.classList.remove("show"),2200)}
-
-startUniversalClock();
-
-document.addEventListener("keydown",e=>{
-  if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==="s"){e.preventDefault();editReference()}
-});
+},60000);
 </script>
 </body>
 </html>
